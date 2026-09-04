@@ -1,0 +1,35 @@
+﻿version: '3.8'
+
+services:
+  # Contêiner da API REST (Base para o AWS ECS Fargate)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: agendou-api-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # Banco de dados PostgreSQL (Simula o Amazon RDS for PostgreSQL)
+  postgres:
+    image: postgres:16-alpine
+    container_name: agendou-postgres
+    environment:
+      POSTGRES_DB: agendou_db
+      POSTGRES_USER: agendou_user
+      POSTGRES_PASSWORD: agendou_secure_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docs/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+volumes:
+  pgdata:
