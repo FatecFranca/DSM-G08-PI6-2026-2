@@ -1,4 +1,7 @@
-# Sistema de Agendamento de Serviços Multiplataforma
+# DSM-G08-PI6-2026-2: Sistema de Agendamento de Serviços Multiplataforma
+
+Repositório do **GRUPO 08** do Projeto Interdisciplinar do 6º semestre DSM 2026/2.  
+**Integrantes:** Hugo Castro e Pablo Miguel
 
 [![Sprint 1](https://img.shields.io/badge/Sprint-1%C2%AA%20Sprint%20(04%2F09%2F2026)-success?style=for-the-badge)](docs/01_escopo_e_requisitos.md)
 [![Status](https://img.shields.io/badge/Status-100%25%20Entregue-blue?style=for-the-badge)](README.md)
