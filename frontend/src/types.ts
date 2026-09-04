@@ -11,6 +11,7 @@ export interface Service {
 export interface Slot {
   inicio: string;
   fim: string;
+  ocupado?: boolean;
 }
 
 export interface Appointment {
