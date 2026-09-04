@@ -46,3 +46,9 @@ Thumbs.db
 # Banco de dados local temporário
 *.sqlite
 *.sqlite3
+
+# Arquivos pessoais e PDFs locais (não enviar ao GitHub)
+*.pdf
+relatorios_pessoais/
+relatorios_pessoais_pdf/
+*.html.tmp

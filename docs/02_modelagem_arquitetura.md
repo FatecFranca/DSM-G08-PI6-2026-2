@@ -6,55 +6,174 @@
 
 ---
 
-## 1. Diagrama de Casos de Uso (UML)
+## 1. Diagramas de Casos de Uso (UML)
 
-O diagrama abaixo ilustra as principais interações dos três atores do sistema (**Cliente**, **Prestador de Serviços** e **Administrador**), bem como as interações com o sistema interno de Inteligência Artificial.
+O ecossistema divide as responsabilidades entre três atores humanos (**Cliente**, **Prestador de Serviços**, **Administrador**) e um ator computacional especializado (**Pipeline de Inteligência Artificial / NLP**).
+
+Para garantir legibilidade máxima e organização modular no GitHub, apresentamos a **Visão Geral Consolidada**, complementada pelas **Visões Focalizadas por Ator** e pela **Tabela de Especificação Detalhada**.
+
+---
+
+### 1.1 Visão Geral Consolidada do Sistema
 
 ```mermaid
 flowchart LR
-    subgraph Atores
+    %% ==========================================
+    %% ATORES PRIMÁRIOS (CLIENTES)
+    %% ==========================================
+    subgraph Atores_Clientes ["👤 Atores Primários"]
         C(["👤 Cliente"])
+    end
+
+    %% ==========================================
+    %% FRONTEIRA DO SISTEMA
+    %% ==========================================
+    subgraph Sistema ["🏢 Sistema de Agendamento Multiplataforma"]
+        
+        subgraph Mod_Agendamento ["📅 Núcleo de Agendamentos & Reserva"]
+            UC05(["UC05: Consultar Horários Disponíveis"])
+            UC06(["UC06: Solicitar Agendamento"])
+            UC07(["UC07: Validar Anti-Double Booking"]):::inc
+            UC08(["UC08: Gerenciar Status do Agendamento"])
+        end
+
+        subgraph Mod_Avaliacao ["⭐ Avaliações & Inteligência Artificial"]
+            UC09(["UC09: Submeter Avaliação do Atendimento"])
+            UC10(["UC10: Classificar Sentimento NLP"]):::inc
+            UC11(["UC11: Visualizar Dashboard e Métricas"])
+        end
+
+        subgraph Mod_Negocio ["🛠️ Catálogo & Expediente"]
+            UC03(["UC03: Gerenciar Catálogo de Serviços"])
+            UC04(["UC04: Configurar Jornada e Horários"])
+        end
+
+        subgraph Mod_Acesso ["🔐 Acesso & Administração"]
+            UC01(["UC01: Autenticar e Gerenciar Perfil"])
+            UC12(["UC12: Administrar Plataforma"])
+        end
+    end
+
+    %% ==========================================
+    %% ATORES SECUNDÁRIOS / GESTÃO E SISTEMAS
+    %% ==========================================
+    subgraph Atores_Gestao ["🏢 Gestão & Sistemas"]
         P(["🛠️ Prestador de Serviços"])
         A(["🛡️ Administrador"])
-        IA(["🤖 Sistema de IA"])
+        IA(["🤖 Pipeline de IA (NLP)"]):::ai
     end
 
-    subgraph "Sistema de Agendamento de Serviços"
-        UC01["UC01: Cadastrar e Autenticar Usuário"]
-        UC02["UC02: Gerenciar Perfil e Negócio"]
-        UC03["UC03: Gerenciar Catálogo de Serviços"]
-        UC04["UC04: Configurar Jornada de Trabalho e Intervalos"]
-        UC05["UC05: Consultar Horários Disponíveis (Slots)"]
-        UC06["UC06: Solicitar Agendamento"]
-        UC07["UC07: Validar Conflito de Horário (Anti-Double Booking)"]
-        UC08["UC08: Gerenciar Status do Agendamento (Confirmar/Cancelar)"]
-        UC09["UC09: Avaliar Atendimento Concluído"]
-        UC10["UC10: Analisar Sentimento do Comentário (NLP)"]
-        UC11["UC11: Visualizar Dashboard e Métricas"]
-        UC12["UC12: Administrar Usuários e Parâmetros da Plataforma"]
-    end
-
+    %% Relações do Cliente
     C --> UC01
-    C --> UC02
     C --> UC05
     C --> UC06
     C --> UC08
     C --> UC09
 
+    %% Dependências Internas (Include e Trigger)
+    UC06 -.->|"<<include>>"| UC07
+    UC09 -.->|"<<trigger>>"| UC10
+    UC10 --- IA
+
+    %% Relações do Prestador
     P --> UC01
-    P --> UC02
     P --> UC03
     P --> UC04
     P --> UC08
     P --> UC11
 
+    %% Relações do Administrador
     A --> UC01
     A --> UC12
 
-    UC06 -.->|<<include>>| UC07
-    UC09 -.->|<<trigger>>| UC10
-    UC10 --- IA
+    %% Definições de Estilo
+    classDef default fill:#ffffff,stroke:#2563eb,stroke-width:1.5px,color:#0f172a;
+    classDef inc fill:#f8fafc,stroke:#64748b,stroke-width:1.5px,stroke-dasharray: 4 4,color:#334155;
+    classDef ai fill:#faf5ff,stroke:#7c3aed,stroke-width:2px,color:#581c87;
 ```
+
+---
+
+### 1.2 Visão Focalizada: Jornada do Cliente (Reserva & Avaliação)
+
+Fluxo limpo e direto destacando o caminho do cliente desde a consulta de slots livres até a inferência de sentimento pós-atendimento:
+
+```mermaid
+flowchart LR
+    Cliente(["👤 Cliente"])
+
+    subgraph Fronteira_Cliente ["Jornada de Atendimento do Cliente"]
+        UC01(["UC01: Autenticar / Criar Conta"])
+        UC05(["UC05: Consultar Horários Disponíveis"])
+        UC06(["UC06: Solicitar Agendamento"])
+        UC07(["UC07: Validar Anti-Double Booking"]):::dashed
+        UC08(["UC08: Cancelar Agendamento"])
+        UC09(["UC09: Submeter Avaliação e Comentário"])
+        UC10(["UC10: Classificar Sentimento por IA"]):::dashed
+    end
+
+    IA(["🤖 Motor NLP"]):::ai
+
+    Cliente --> UC01
+    Cliente --> UC05
+    Cliente --> UC06
+    Cliente --> UC08
+    Cliente --> UC09
+
+    UC06 -.->|"<<include>>"| UC07
+    UC09 -.->|"<<trigger>>"| UC10
+    UC10 --- IA
+
+    classDef default fill:#f0f9ff,stroke:#0284c7,stroke-width:1.5px,color:#0f172a;
+    classDef dashed fill:#ffffff,stroke:#64748b,stroke-width:1.5px,stroke-dasharray: 4 4,color:#334155;
+    classDef ai fill:#faf5ff,stroke:#7c3aed,stroke-width:2px,color:#581c87;
+```
+
+---
+
+### 1.3 Visão Focalizada: Gestão do Prestador & Painel Analítico
+
+Fluxo operacional do prestador para manter seus serviços, jornada e acompanhar o feedback dos clientes:
+
+```mermaid
+flowchart LR
+    subgraph Fronteira_Prestador ["Painel Operacional do Prestador"]
+        UC01(["UC01: Autenticar no Painel"])
+        UC03(["UC03: Cadastrar e Editar Serviços"])
+        UC04(["UC04: Configurar Horários e Intervalos"])
+        UC08(["UC08: Confirmar ou Cancelar Agendamentos"])
+        UC11(["UC11: Analisar Métricas & Reputação NLP"])
+    end
+
+    Prestador(["🛠️ Prestador de Serviços"])
+
+    Prestador --> UC01
+    Prestador --> UC03
+    Prestador --> UC04
+    Prestador --> UC08
+    Prestador --> UC11
+
+    classDef default fill:#fffbeb,stroke:#d97706,stroke-width:1.5px,color:#0f172a;
+```
+
+---
+
+### 1.4 Especificação Detalhada dos Casos de Uso
+
+| ID | Caso de Uso | Atores Participantes | Tipo | Descrição Resumida | Requisito Relacionado |
+| :---: | :--- | :--- | :---: | :--- | :---: |
+| **UC01** | Autenticar e Gerenciar Perfil | Cliente, Prestador, Admin | Primário | Cadastro, login com senha criptografada (bcrypt) e emissão de token JWT. | RF01, RF02, RNF04 |
+| **UC02** | Gerenciar Perfil e Negócio | Cliente, Prestador | Primário | Manutenção de dados de contato, endereço e dados do estabelecimento. | RF02 |
+| **UC03** | Gerenciar Catálogo de Serviços | Prestador | Primário | Criação, alteração de preço, duração em minutos e status ativo de serviços. | RF03 |
+| **UC04** | Configurar Expediente e Intervalos | Prestador | Primário | Definição da grade semanal de trabalho (abertura, fechamento e almoço). | RF04 |
+| **UC05** | Consultar Horários Disponíveis | Cliente | Primário | Visualização dinâmica de slots vagos na data escolhida, sem horários fantasmas. | RF05 |
+| **UC06** | Solicitar Agendamento | Cliente | Primário | Seleção do serviço e horário para reserva na agenda do prestador. | RF06 |
+| **UC07** | Validar Anti-Double Booking | Sistema | `<<include>>` | Bloqueio automático de concorrência que impede agendamentos simultâneos. | RF07, RNF01 |
+| **UC08** | Gerenciar Status do Agendamento | Cliente, Prestador | Primário | Mudança de estados semafóricos (Pendente ➔ Confirmado ➔ Cancelado ➔ Concluído). | RF08, RNF06 |
+| **UC09** | Submeter Avaliação do Atendimento | Cliente | Primário | Atribuição de nota de 1 a 5 estrelas e comentário em texto natural após a conclusão. | RF09 |
+| **UC10** | Classificar Sentimento NLP | Sistema de IA | `<<trigger>>` | Processamento TF-IDF e classificação estatística em tempo real (< 10ms). | RF10, RNF02, RNF03 |
+| **UC11** | Visualizar Dashboard e Métricas | Prestador | Primário | Indicadores visuais de volume de atendimentos e satisfação líquida dos clientes. | RF11 |
+| **UC12** | Administrar Parâmetros Globais | Administrador | Primário | Gestão da infraestrutura, bloqueio de contas irregulares e auditoria do sistema. | RF12 |
 
 ---
 
