@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agendou! | Sistema de Agendamento de Serviços Multiplataforma</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen">
+
+  <!-- Navbar -->
+  <header class="bg-white/95 backdrop-blur border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+          <i class="fa-solid fa-calendar-check text-xl"></i>
+        </div>
+        <div>
+          <span class="text-2xl font-black tracking-tight text-slate-900">Agendou<span class="text-indigo-600">!</span></span>
+          <span class="block text-[10px] uppercase font-bold tracking-widest text-slate-400">Multiplataforma</span>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold text-slate-600">
+        <a href="#como-funciona" class="hover:text-indigo-600 transition">Como Funciona</a>
+        <a href="#servicos" class="hover:text-indigo-600 transition">Serviços Populares</a>
+        <a href="#diferenciais" class="hover:text-indigo-600 transition">Diferenciais & IA</a>
+        <a href="agendamento.html" class="text-indigo-600 hover:text-indigo-700 transition">Agendar Agora</a>
+      </nav>
+
+      <div class="flex items-center space-x-3">
+        <a href="login.html" class="text-sm font-semibold text-slate-700 hover:text-indigo-600 px-4 py-2 transition">Entrar</a>
+        <a href="login.html?tab=register" class="text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl shadow-md shadow-indigo-500/20 transition transform active:scale-95">Cadastrar Grátis</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="flex-grow">
+    <section class="relative overflow-hidden pt-12 pb-24 lg:pt-20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-12 gap-12 items-center">
+          
+          <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+            <div class="inline-flex items-center space-x-2 bg-indigo-50 border border-indigo-100 px-3.5 py-1.5 rounded-full text-indigo-700 text-xs font-bold uppercase tracking-wider">
+              <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+              <span>Projeto Interdisciplinar – 6º Semestre</span>
+            </div>
+
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
+              Agende seus serviços favoritos em <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">poucos cliques</span>.
+            </h1>
+
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+              Diga adeus às mensagens demoradas no WhatsApp e conflitos de horários. Descubra barbeiros, salões, clínicas e mecânicos disponíveis perto de você com verificação anti-sobreposição em tempo real.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+              <a href="agendamento.html" class="w-full sm:w-auto inline-flex items-center justify-center space-x-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-indigo-600/30 transition transform hover:-translate-y-0.5">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Experimentar Agendamento</span>
+              </a>
+              <a href="dashboard-prestador.html" class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold px-7 py-4 rounded-2xl shadow-sm transition">
+                <i class="fa-solid fa-briefcase text-slate-500"></i>
+                <span>Painel do Prestador</span>
+              </a>
+            </div>
+
+            <!-- Mini estatísticas -->
+            <div class="pt-8 border-t border-slate-200 grid grid-cols-3 gap-6 max-w-lg mx-auto lg:mx-0">
+              <div>
+                <p class="text-2xl font-black text-slate-900">0s</p>
+                <p class="text-xs font-semibold text-slate-500">Double-Booking (Zero)</p>
+              </div>
+              <div>
+                <p class="text-2xl font-black text-indigo-600">&lt; 1s</p>
+                <p class="text-xs font-semibold text-slate-500">IA de Sentimentos</p>
+              </div>
+              <div>
+                <p class="text-2xl font-black text-slate-900">100%</p>
+                <p class="text-xs font-semibold text-slate-500">Nuvem Multi-AZ</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card de Demonstração / Visual Hero -->
+          <div class="lg:col-span-5 relative">
+            <div class="relative bg-white rounded-3xl p-6 shadow-2xl border border-slate-200/80">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                <div class="flex items-center space-x-3">
+                  <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                    <i class="fa-solid fa-scissors"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-slate-900">Barbearia VIP Vintage</h3>
+                    <p class="text-xs text-slate-500"><i class="fa-solid fa-location-dot text-indigo-500"></i> Bela Vista, São Paulo</p>
+                  </div>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+                  <i class="fa-solid fa-circle text-[8px] mr-1.5"></i> Aberto
+                </span>
+              </div>
+
+              <div class="space-y-3">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                  <div>
+                    <p class="font-semibold text-sm text-slate-800">Corte Masculino Degradê</p>
+                    <p class="text-xs text-slate-500">Duração: 45 minutos</p>
+                  </div>
+                  <span class="font-bold text-indigo-600">R$ 50,00</span>
+                </div>
+
+                <div class="pt-2">
+                  <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Horários Livres Hoje (Slots):</label>
+                  <div class="grid grid-cols-3 gap-2">
+                    <button class="py-2 text-xs font-bold rounded-lg border border-slate-200 text-slate-600 hover:border-indigo-600 hover:bg-indigo-50 transition">09:30</button>
+                    <button class="py-2 text-xs font-bold rounded-lg bg-indigo-600 text-white shadow-sm">14:00</button>
+                    <button class="py-2 text-xs font-bold rounded-lg border border-slate-200 text-slate-600 hover:border-indigo-600 hover:bg-indigo-50 transition">16:15</button>
+                  </div>
+                </div>
+
+                <div class="p-4 bg-violet-50 rounded-2xl border border-violet-100 mt-4">
+                  <div class="flex items-center space-x-2 text-violet-800 text-xs font-bold mb-1">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>IA & Mineração de Dados Integrada</span>
+                  </div>
+                  <p class="text-xs text-violet-700 italic">"Atendimento impecável e pontual!"</p>
+                  <div class="flex items-center justify-between mt-2 pt-2 border-t border-violet-200/60 text-[11px]">
+                    <span class="font-bold text-emerald-700"><i class="fa-solid fa-face-smile mr-1"></i> Sentimento: Positivo</span>
+                    <span class="text-slate-500">Latência: 12ms</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-5">
+                <a href="agendamento.html" class="w-full block text-center bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold py-3 rounded-xl transition">
+                  Prosseguir para Agendamento Completo
+                </a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção de Acesso Rápido às Telas da Sprint 1 -->
+    <section class="py-16 bg-white border-y border-slate-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-12">
+          <h2 class="text-3xl font-extrabold text-slate-900">Entregas do Front-end (1ª Sprint)</h2>
+          <p class="text-slate-600 mt-2">Navegue diretamente pelos protótipos estáticos e funcionais desenvolvidos para a validação do projeto.</p>
+        </div>
+
+        <div class="grid md:grid-cols-4 gap-6">
+          <a href="agendamento.html" class="group p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-indigo-500 hover:shadow-xl hover:bg-white transition duration-300">
+            <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition">
+              <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <h3 class="font-bold text-lg text-slate-900 group-hover:text-indigo-600 transition">1. Fluxo de Agendamento</h3>
+            <p class="text-xs text-slate-500 mt-2">Seleção de serviço, data, cálculo de slots livres e prevenção de double-booking.</p>
+          </a>
+
+          <a href="dashboard-prestador.html" class="group p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-indigo-500 hover:shadow-xl hover:bg-white transition duration-300">
+            <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <h3 class="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition">2. Dashboard do Prestador</h3>
+            <p class="text-xs text-slate-500 mt-2">Gestão de catálogo, jornada de trabalho, métricas e cores semafóricas (RNF06).</p>
+          </a>
+
+          <a href="avaliacao.html" class="group p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-indigo-500 hover:shadow-xl hover:bg-white transition duration-300">
+            <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition">
+              <i class="fa-solid fa-star-half-stroke"></i>
+            </div>
+            <h3 class="font-bold text-lg text-slate-900 group-hover:text-amber-600 transition">3. Avaliação & IA</h3>
+            <p class="text-xs text-slate-500 mt-2">Feedback pós-atendimento com classificação automática de sentimento (RF10).</p>
+          </a>
+
+          <a href="login.html" class="group p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-indigo-500 hover:shadow-xl hover:bg-white transition duration-300">
+            <div class="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition">
+              <i class="fa-solid fa-user-lock"></i>
+            </div>
+            <h3 class="font-bold text-lg text-slate-900 group-hover:text-violet-600 transition">4. Autenticação</h3>
+            <p class="text-xs text-slate-500 mt-2">Login e registro com diferenciação entre Cliente, Prestador e Administrador (RF01).</p>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 py-10 border-t border-slate-800 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center space-x-2">
+        <span class="font-bold text-white">Agendou!</span>
+        <span>— Projeto Interdisciplinar (PI) 6º Semestre | DSM</span>
+      </div>
+      <p>Desenvolvido com Node.js, TypeScript, Tailwind CSS, PostgreSQL e Machine Learning.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

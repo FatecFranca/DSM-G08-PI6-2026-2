@@ -1,0 +1,31 @@
+id_avaliacao,nota_estrelas,comentario_texto,sentimento,categoria_servico
+1,5,"Serviço impecável! O profissional foi super pontual e atencioso.",Positivo,Barbearia
+2,1,"Muito ruim, demorou mais de uma hora além do combinado e o corte ficou horrível.",Negativo,Barbearia
+3,5,"Excelente atendimento, ambiente muito limpo e organizado. Recomendo a todos!",Positivo,Estetica
+4,2,"Não gostei do resultado. O preço foi muito alto pelo serviço entregue.",Negativo,Salao
+5,5,"Maravilhoso! Superou todas as minhas expectativas. Com certeza voltarei.",Positivo,Estetica
+6,1,"Péssima experiência. O prestador simplesmente não apareceu no horário marcado.",Negativo,Clinica
+7,4,"Muito bom o trabalho, apenas o tempo de espera que passou um pouco dos minutos previstos.",Positivo,Oficina
+8,1,"Total descaso com o cliente. Não recomendo para ninguém, nota zero.",Negativo,Oficina
+9,5,"Profissional muito qualificado e prestativo. Ficou perfeito!",Positivo,Consultoria
+10,2,"Fiquei insatisfeito com a qualidade, achei muito amador.",Negativo,Consultoria
+11,5,"Atendimento de primeira linha, pontualidade britânica e serviço nota dez!",Positivo,Barbearia
+12,1,"Detestei. Estragou meu cabelo e nem sequer pediu desculpas pelo erro.",Negativo,Salao
+13,5,"Adorei! Tudo muito rápido, prático e com preço justo.",Positivo,Salao
+14,2,"Ambiente barulhento e desorganizado, atendimento deixou muito a desejar.",Negativo,Barbearia
+15,5,"Melhor profissional da região! Sempre saio satisfeito daqui.",Positivo,Estetica
+16,1,"Serviço porco e atendimento grosseiro. Nunca mais piso lá.",Negativo,Oficina
+17,4,"Gostei bastante do resultado final, só achei o estacionamento difícil.",Positivo,Clinica
+18,1,"Cobrou um valor diferente do combinado no agendamento, pura desonestidade.",Negativo,Oficina
+19,5,"Simplesmente perfeito, rápido, higiênico e muito educado.",Positivo,Barbearia
+20,2,"O procedimento doeu muito e a profissional parecia sem experiência nenhuma.",Negativo,Estetica
+21,5,"Recomendo de olhos fechados. Excelente custo benefício e grande cuidado com os detalhes.",Positivo,Consultoria
+22,1,"Atraso absurdo de duas horas, perdi meu compromisso seguinte por causa disso.",Negativo,Clinica
+23,5,"Sensacional! Lugar agradável, café cortesia e o corte ficou exatamente como pedi.",Positivo,Barbearia
+24,2,"Não cumpre o horário agendado pelo aplicativo, perdi tempo atoa.",Negativo,Salao
+25,5,"Muito eficiente e simpático. Nota mil para a equipe!",Positivo,Oficina
+26,1,"Produto de péssima qualidade utilizado no meu atendimento, tive até alergia.",Negativo,Estetica
+27,4,"Bom atendimento, funcionário cordial e espaço agradável.",Positivo,Barbearia
+28,2,"O resultado ficou torto e o atendimento foi com muita má vontade.",Negativo,Salao
+29,5,"Pontual, preço transparente e trabalho extremamente caprichado.",Positivo,Oficina
+30,1,"Pior atendimento da minha vida, não volto nunca mais.",Negativo,Consultoria
