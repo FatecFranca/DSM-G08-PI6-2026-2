@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarCheck, ShieldCheck, Zap, Scissors, Sparkles, Brain, ArrowRight, Star, Clock } from 'lucide-react';
+import { CalendarCheck, ShieldCheck, Zap, Scissors, Brain, ArrowRight, Star, Clock } from 'lucide-react';
 
 interface HomeProps {
   onNavigate: (page: string) => void;
@@ -7,117 +7,120 @@ interface HomeProps {
 
 export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
   return (
-    <div className="space-y-16 pb-16">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 lg:pt-20">
+    <div className="space-y-20 pb-20">
+      
+      {/* Hero Section Minimalista */}
+      <section className="pt-16 lg:pt-24 border-b border-stone-200 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
             
-            <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center space-x-2 bg-indigo-50 border border-indigo-100 px-4 py-1.5 rounded-full text-indigo-700 text-xs font-bold uppercase tracking-wider">
-                <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
-                <span>Vite + React + TypeScript + Node.js</span>
+            <div className="lg:col-span-7 space-y-8 text-left">
+              
+              <div className="inline-flex items-center space-x-2 bg-pastel-sand border border-stone-300 px-3.5 py-1.5 text-stone-700 text-xs font-mono uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 bg-stone-900"></span>
+                <span>PI 6º Semestre • FATEC Franca</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
-                Agende seus serviços favoritos em{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
-                  poucos cliques
-                </span>.
+              <h1 className="text-4xl sm:text-6xl font-normal text-stone-900 tracking-tight leading-[1.08]">
+                Agendamento de serviços, <br />
+                <span className="font-serif italic text-stone-600">simples e preciso.</span>
               </h1>
 
-              <p className="text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                Diga adeus às esperas no WhatsApp e duplicidade de marcações. Nossa plataforma calcula horários livres em tempo real com garantia anti-sobreposição (*zero double-booking*) e inteligência de sentimentos.
+              <p className="text-base sm:text-lg text-stone-600 max-w-xl leading-relaxed font-light">
+                Plataforma com cálculo em tempo real de horários livres, prevenção matemática de <em>double-booking</em> e classificação de sentimentos com aprendizado supervisionado.
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
                 <button
                   onClick={() => onNavigate('agendamento')}
-                  className="w-full sm:w-auto inline-flex items-center justify-center space-x-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-indigo-600/30 transition transform hover:-translate-y-0.5"
+                  className="w-full sm:w-auto inline-flex items-center justify-center space-x-3 bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs uppercase tracking-wider px-8 py-4 border border-stone-900 transition"
                 >
-                  <Zap className="w-5 h-5" />
-                  <span>Experimentar Agendamento</span>
+                  <Zap className="w-4 h-4 text-pastel-sage" />
+                  <span>Realizar Agendamento</span>
                 </button>
                 <button
                   onClick={() => onNavigate('dashboard')}
-                  className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold px-7 py-4 rounded-2xl shadow-sm transition"
+                  className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white hover:bg-pastel-sand border border-stone-300 text-stone-800 font-bold text-xs uppercase tracking-wider px-7 py-4 transition"
                 >
                   <span>Painel do Prestador</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 text-stone-500" />
                 </button>
               </div>
 
-              {/* Badges de Qualidade */}
-              <div className="pt-6 border-t border-slate-200 grid grid-cols-3 gap-6 max-w-lg mx-auto lg:mx-0">
+              {/* Indicadores Minimalistas com Linhas Retas */}
+              <div className="pt-8 border-t border-stone-200 grid grid-cols-3 gap-8 max-w-lg">
                 <div>
-                  <p className="text-2xl font-black text-slate-900">0%</p>
-                  <p className="text-xs font-semibold text-slate-500">Conflito de Horário</p>
+                  <p className="text-3xl font-light text-stone-900 font-mono">0.00%</p>
+                  <p className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mt-1">Duplicidade</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-indigo-600">&lt; 1s</p>
-                  <p className="text-xs font-semibold text-slate-500">Análise de Sentimentos</p>
+                  <p className="text-3xl font-light text-pastel-sage-dark font-mono">&lt; 10ms</p>
+                  <p className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mt-1">Inferência IA</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-slate-900">100%</p>
-                  <p className="text-xs font-semibold text-slate-500">Cloud Ready</p>
+                  <p className="text-3xl font-light text-stone-900 font-mono">100%</p>
+                  <p className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mt-1">Cloud Native</p>
                 </div>
               </div>
             </div>
 
-            {/* Preview Card Interativo */}
-            <div className="lg:col-span-5 relative">
-              <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-200/80 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            {/* Painel Sharp Minimalista */}
+            <div className="lg:col-span-5">
+              <div className="bg-white border-2 border-stone-900 p-8 space-y-6">
+                
+                <div className="flex items-center justify-between border-b border-stone-200 pb-5">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold shadow-inner">
-                      <Scissors className="w-6 h-6" />
+                    <div className="w-10 h-10 bg-pastel-sand border border-stone-300 flex items-center justify-center text-stone-800">
+                      <Scissors className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-slate-900">Barbearia VIP Vintage</h3>
-                      <p className="text-xs text-slate-500">Av. Paulista, 1000 - SP</p>
+                      <h3 className="font-bold text-stone-900 text-base">Barbearia VIP Vintage</h3>
+                      <p className="text-xs text-stone-400 font-mono">São Paulo, SP</p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
-                    Aberto Hoje
+                  <span className="bg-pastel-sage border border-pastel-sage-dark/30 text-pastel-sage-dark text-[10px] font-bold uppercase tracking-wider px-2.5 py-1">
+                    Disponível
                   </span>
                 </div>
 
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center">
+                <div className="p-4 bg-pastel-cream border border-stone-200 flex justify-between items-center">
                   <div>
-                    <p className="font-bold text-sm text-slate-800">Corte de Cabelo Degradê</p>
-                    <p className="text-xs text-slate-500 flex items-center mt-0.5">
-                      <Clock className="w-3.5 h-3.5 mr-1 text-slate-400" /> 45 minutos
+                    <p className="font-bold text-sm text-stone-900">Corte de Cabelo Degradê</p>
+                    <p className="text-xs text-stone-500 flex items-center mt-1">
+                      <Clock className="w-3.5 h-3.5 mr-1 text-stone-400" /> 45 minutos
                     </p>
                   </div>
-                  <span className="text-base font-extrabold text-indigo-600">R$ 50,00</span>
+                  <span className="text-lg font-mono font-bold text-stone-900">R$ 50,00</span>
                 </div>
 
                 <div>
-                  <p className="text-xs font-bold uppercase text-slate-500 mb-2">Slots Livres Hoje (RF05):</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button className="py-2 text-xs font-bold rounded-xl border border-slate-200 text-slate-600 hover:border-indigo-600">09:30</button>
-                    <button className="py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30">11:00</button>
-                    <button className="py-2 text-xs font-bold rounded-xl border border-slate-200 text-slate-600 hover:border-indigo-600">14:30</button>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-2 font-mono">
+                    Slots Livres na Data (RF05):
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 font-mono text-xs">
+                    <div className="py-2 px-1 text-center border border-stone-200 bg-pastel-cream text-stone-600">09:30</div>
+                    <div className="py-2 px-1 text-center bg-stone-900 text-white font-bold">11:00</div>
+                    <div className="py-2 px-1 text-center border border-stone-200 bg-pastel-cream text-stone-600">14:30</div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-violet-50 rounded-2xl border border-violet-100">
-                  <div className="flex items-center space-x-2 text-violet-800 text-xs font-bold mb-1">
-                    <Brain className="w-4 h-4 text-violet-600" />
-                    <span>Mineração de Dados em Tempo Real (RF10)</span>
+                <div className="p-4 bg-pastel-lavender border border-pastel-lavender-dark/20 space-y-2">
+                  <div className="flex items-center space-x-2 text-pastel-lavender-dark text-xs font-bold uppercase tracking-wider">
+                    <Brain className="w-4 h-4" />
+                    <span>Mineração de Dados (PLN)</span>
                   </div>
-                  <p className="text-xs text-violet-700 italic">"Profissional pontual e corte impecável!"</p>
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-violet-200/60 text-[11px]">
-                    <span className="font-bold text-emerald-700">Sentimento: Positivo (98%)</span>
-                    <span className="text-slate-500 font-mono">0.12ms</span>
+                  <p className="text-xs text-stone-700 italic">"Pontualidade excelente e corte de alta precisão."</p>
+                  <div className="flex items-center justify-between pt-2 border-t border-pastel-lavender-dark/20 text-[11px]">
+                    <span className="font-bold text-stone-900">Sentimento: Positivo</span>
+                    <span className="font-mono text-stone-500">0.12ms (RNF02 OK)</span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => onNavigate('agendamento')}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-3.5 rounded-xl transition shadow-md"
+                  className="w-full bg-stone-900 hover:bg-stone-800 text-white text-xs uppercase tracking-wider font-bold py-3.5 border border-stone-900 transition"
                 >
-                  Abrir Fluxo de Agendamento Completo
+                  Continuar para Agendamento
                 </button>
               </div>
             </div>
@@ -126,61 +129,75 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
         </div>
       </section>
 
-      {/* Cards de Navegação da 1ª Sprint */}
+      {/* Grid de Módulos com Linhas Retas e Tons Pastéis */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-sm space-y-6">
-          <div className="text-center max-w-2xl mx-auto">
-            <h2 className="text-2xl font-black text-slate-900">Módulos da 1ª Sprint Integrados</h2>
-            <p className="text-xs text-slate-500 mt-1">Navegue pelas telas desenvolvidas com React e conectadas à API Node.js</p>
+        <div className="border border-stone-200 bg-white p-10 space-y-8">
+          
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-stone-200 pb-6 gap-4">
+            <div>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Módulos Funcionais</span>
+              <h2 className="text-2xl font-normal text-stone-900 tracking-tight mt-1">Entregas da 1ª Sprint</h2>
+            </div>
+            <span className="text-xs text-stone-500 font-mono">Stack: React • Vite • Node.js</span>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-4">
-            <button
+          <div className="grid md:grid-cols-4 gap-6">
+            <div
               onClick={() => onNavigate('agendamento')}
-              className="p-5 rounded-2xl bg-slate-50 hover:bg-indigo-50/50 border border-slate-200 hover:border-indigo-400 text-left transition group"
+              className="p-6 border border-stone-300 bg-pastel-cream hover:bg-pastel-sage hover:border-pastel-sage-dark transition cursor-pointer group"
             >
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+              <div className="w-10 h-10 bg-stone-900 text-pastel-sage flex items-center justify-center mb-4">
                 <CalendarCheck className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 group-hover:text-indigo-600">1. Agendamento</h3>
-              <p className="text-xs text-slate-500 mt-1">Cálculo de slots livres e anti-conflito (RF05, RF06, RF07).</p>
-            </button>
+              <h3 className="font-bold text-sm text-stone-900 uppercase tracking-wide">01. Agendamento</h3>
+              <p className="text-xs text-stone-600 mt-2 leading-relaxed">
+                Seleção de serviços e cálculo de horários livres com garantia anti-sobreposição (RF05, RF06, RF07).
+              </p>
+            </div>
 
-            <button
+            <div
               onClick={() => onNavigate('dashboard')}
-              className="p-5 rounded-2xl bg-slate-50 hover:bg-blue-50/50 border border-slate-200 hover:border-blue-400 text-left transition group"
+              className="p-6 border border-stone-300 bg-pastel-cream hover:bg-pastel-blue hover:border-pastel-blue-dark transition cursor-pointer group"
             >
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+              <div className="w-10 h-10 bg-stone-900 text-pastel-blue flex items-center justify-center mb-4">
                 <ShieldCheck className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 group-hover:text-blue-600">2. Painel do Prestador</h3>
-              <p className="text-xs text-slate-500 mt-1">Status semafóricos RNF06 e métricas de satisfação RF11.</p>
-            </button>
+              <h3 className="font-bold text-sm text-stone-900 uppercase tracking-wide">02. Painel Prestador</h3>
+              <p className="text-xs text-stone-600 mt-2 leading-relaxed">
+                Indicadores semafóricos de acessibilidade (RNF06) e métricas consolidadas de atendimento (RF11).
+              </p>
+            </div>
 
-            <button
+            <div
               onClick={() => onNavigate('avaliacao')}
-              className="p-5 rounded-2xl bg-slate-50 hover:bg-amber-50/50 border border-slate-200 hover:border-amber-400 text-left transition group"
+              className="p-6 border border-stone-300 bg-pastel-cream hover:bg-pastel-amber hover:border-pastel-amber-dark transition cursor-pointer group"
             >
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+              <div className="w-10 h-10 bg-stone-900 text-pastel-amber flex items-center justify-center mb-4">
                 <Star className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 group-hover:text-amber-600">3. Avaliações & IA</h3>
-              <p className="text-xs text-slate-500 mt-1">Classificação automática com NLP em menos de 1 segundo (RNF02).</p>
-            </button>
+              <h3 className="font-bold text-sm text-stone-900 uppercase tracking-wide">03. Mineração & IA</h3>
+              <p className="text-xs text-stone-600 mt-2 leading-relaxed">
+                Classificação de sentimentos via Processamento de Linguagem Natural com latência inferior a 1s (RF10, RNF02).
+              </p>
+            </div>
 
-            <button
+            <div
               onClick={() => onNavigate('login')}
-              className="p-5 rounded-2xl bg-slate-50 hover:bg-violet-50/50 border border-slate-200 hover:border-violet-400 text-left transition group"
+              className="p-6 border border-stone-300 bg-pastel-cream hover:bg-pastel-peach hover:border-pastel-peach-dark transition cursor-pointer group"
             >
-              <div className="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center mb-3 group-hover:scale-110 transition">
-                <Sparkles className="w-5 h-5" />
+              <div className="w-10 h-10 bg-stone-900 text-pastel-peach flex items-center justify-center mb-4">
+                <Brain className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 group-hover:text-violet-600">4. Autenticação</h3>
-              <p className="text-xs text-slate-500 mt-1">Perfis de Cliente e Prestador com senhas criptografadas (RF01).</p>
-            </button>
+              <h3 className="font-bold text-sm text-stone-900 uppercase tracking-wide">04. Autenticação</h3>
+              <p className="text-xs text-stone-600 mt-2 leading-relaxed">
+                Controle de perfis (CLIENT, PROVIDER, ADMIN) e criptografia robusta de credenciais (RF01, RNF03).
+              </p>
+            </div>
           </div>
+
         </div>
       </section>
+
     </div>
   );
 };

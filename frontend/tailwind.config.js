@@ -7,12 +7,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: '#f5f3ff',
-          100: '#ede9fe',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
+        paper: '#FAF9F6',
+        pastel: {
+          sage: '#E3EBDD',
+          'sage-dark': '#4F6355',
+          sand: '#F2EFE9',
+          cream: '#F9F8F5',
+          peach: '#F8ECE8',
+          'peach-dark': '#A85A48',
+          blue: '#DEE8EE',
+          'blue-dark': '#416377',
+          lavender: '#EAE6F0',
+          'lavender-dark': '#5D5077',
+          amber: '#F6EED8',
+          'amber-dark': '#8A6D24',
+          slate: '#2B303A'
         }
       }
     },

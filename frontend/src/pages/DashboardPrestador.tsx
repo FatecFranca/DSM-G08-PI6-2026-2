@@ -26,131 +26,124 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
     return a.status === filtroStatus;
   });
 
-  // Estilos semafóricos de acessibilidade (RNF06)
+  // Indicadores semafóricos em tons pastéis e ângulos retos (RNF06)
   const getStatusBadge = (status: Appointment['status']) => {
     switch (status) {
       case 'Confirmado':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+        return 'bg-pastel-sage text-pastel-sage-dark border-pastel-sage-dark/40 font-bold';
       case 'Pendente':
-        return 'bg-amber-100 text-amber-800 border-amber-300';
+        return 'bg-pastel-amber text-pastel-amber-dark border-pastel-amber-dark/40 font-bold';
       case 'Cancelado':
-        return 'bg-red-100 text-red-800 border-red-300';
+        return 'bg-pastel-peach text-pastel-peach-dark border-pastel-peach-dark/40 font-bold';
       case 'Concluído':
-        return 'bg-blue-100 text-blue-800 border-blue-300';
+        return 'bg-pastel-blue text-pastel-blue-dark border-pastel-blue-dark/40 font-bold';
       default:
-        return 'bg-slate-100 text-slate-800 border-slate-300';
+        return 'bg-stone-100 text-stone-700 border-stone-300 font-bold';
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
       
       {/* Topo */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-stone-300 pb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">Painel do Prestador (RF11)</h1>
-          <p className="text-xs text-slate-500 mt-1">Gestão centralizada de atendimentos, métricas e catálogo de serviços.</p>
+          <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Módulo Administrativo</span>
+          <h1 className="text-3xl font-normal text-stone-900 tracking-tight mt-1">Painel do Prestador (RF11)</h1>
+          <p className="text-xs text-stone-500 font-light mt-1">Visão analítica de horários, faturamento e índices de sentimento.</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
             onClick={() => onNavigate('agendamento')}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition"
+            className="bg-stone-900 hover:bg-stone-800 text-white text-xs uppercase tracking-wider font-bold px-6 py-3 border border-stone-900 transition"
           >
             Novo Agendamento
           </button>
         </div>
       </div>
 
-      {/* Cards de Métricas e IA (RF11) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* Cards de Métricas em Tons Pastéis com Sharp Corners */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
-            <Users className="w-6 h-6" />
+        <div className="bg-pastel-cream p-6 border border-stone-300 space-y-2">
+          <div className="flex justify-between items-center text-stone-400">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-stone-500">Agendados Hoje</span>
+            <Users className="w-4 h-4 text-stone-600" />
           </div>
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Agendados</p>
-            <h3 className="text-2xl font-extrabold text-slate-900">{agendamentos.length} Atendimentos</h3>
-            <p className="text-[11px] text-emerald-600 font-semibold">Hoje: 04/09/2026</p>
-          </div>
+          <h3 className="text-3xl font-mono font-light text-stone-900">{agendamentos.length}</h3>
+          <p className="text-[11px] font-mono text-pastel-sage-dark font-semibold">Data: 04/09/2026</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
-            <DollarSign className="w-6 h-6" />
+        <div className="bg-pastel-cream p-6 border border-stone-300 space-y-2">
+          <div className="flex justify-between items-center text-stone-400">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-stone-500">Faturamento Previsto</span>
+            <DollarSign className="w-4 h-4 text-stone-600" />
           </div>
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Faturamento Previsto</p>
-            <h3 className="text-2xl font-extrabold text-slate-900">
-              R$ {agendamentos.reduce((acc, a) => acc + a.servico_preco, 0).toFixed(2).replace('.', ',')}
-            </h3>
-            <p className="text-[11px] text-slate-500 font-semibold">Receita total da data</p>
-          </div>
+          <h3 className="text-3xl font-mono font-light text-stone-900">
+            R$ {agendamentos.reduce((acc, a) => acc + a.servico_preco, 0).toFixed(2).replace('.', ',')}
+          </h3>
+          <p className="text-[11px] font-mono text-stone-500">Receita estimada diária</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center text-xl">
-            <Star className="w-6 h-6" />
+        <div className="bg-pastel-cream p-6 border border-stone-300 space-y-2">
+          <div className="flex justify-between items-center text-stone-400">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-stone-500">Avaliação Média</span>
+            <Star className="w-4 h-4 text-stone-600" />
           </div>
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Avaliação Média</p>
-            <h3 className="text-2xl font-extrabold text-slate-900">4.9 / 5.0</h3>
-            <p className="text-[11px] text-slate-500 font-semibold">128 avaliações</p>
-          </div>
+          <h3 className="text-3xl font-mono font-light text-stone-900">4.9</h3>
+          <p className="text-[11px] font-mono text-stone-500">128 avaliações de clientes</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center text-xl">
-            <Brain className="w-6 h-6" />
+        <div className="bg-pastel-lavender p-6 border border-pastel-lavender-dark/30 space-y-2">
+          <div className="flex justify-between items-center text-pastel-lavender-dark">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-pastel-lavender-dark">Satisfação (NLP)</span>
+            <Brain className="w-4 h-4 text-pastel-lavender-dark" />
           </div>
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Satisfação IA (NLP)</p>
-            <h3 className="text-2xl font-extrabold text-violet-600">96.4%</h3>
-            <p className="text-[11px] text-slate-500 font-semibold">Mineração de Dados</p>
-          </div>
+          <h3 className="text-3xl font-mono font-light text-stone-900">96.4%</h3>
+          <p className="text-[11px] font-mono text-pastel-lavender-dark font-semibold">Sentimento Positivo</p>
         </div>
 
       </div>
 
-      {/* Tabela de Agendamentos */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden space-y-4">
+      {/* Tabela de Agendamentos Minimalista */}
+      <div className="bg-white border border-stone-300 space-y-4">
         
         {/* Filtros e Legenda Semafórica (RNF06) */}
-        <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-6 border-b border-stone-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">Grade de Compromissos</h2>
-            <p className="text-xs text-slate-500">Padrão visual semafórico para rápida identificação de status.</p>
+            <h2 className="text-base font-bold uppercase tracking-wider text-stone-900">Grade de Compromissos</h2>
+            <p className="text-xs text-stone-500 font-mono mt-0.5">Padrão visual semafórico pastel para identificação rápida.</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
             <button
               onClick={() => setFiltroStatus('todos')}
-              className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${
-                filtroStatus === 'todos' ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-600'
+              className={`px-3 py-1.5 border uppercase tracking-wider text-[11px] ${
+                filtroStatus === 'todos' ? 'bg-stone-900 text-white border-stone-900 font-bold' : 'bg-white text-stone-600 border-stone-300'
               }`}
             >
               Todos
             </button>
             <button
               onClick={() => setFiltroStatus('Confirmado')}
-              className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${
-                filtroStatus === 'Confirmado' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700'
+              className={`px-3 py-1.5 border uppercase tracking-wider text-[11px] ${
+                filtroStatus === 'Confirmado' ? 'bg-pastel-sage text-pastel-sage-dark border-pastel-sage-dark font-bold' : 'bg-white text-stone-600 border-stone-300'
               }`}
             >
               Confirmados
             </button>
             <button
               onClick={() => setFiltroStatus('Pendente')}
-              className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${
-                filtroStatus === 'Pendente' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-700'
+              className={`px-3 py-1.5 border uppercase tracking-wider text-[11px] ${
+                filtroStatus === 'Pendente' ? 'bg-pastel-amber text-pastel-amber-dark border-pastel-amber-dark font-bold' : 'bg-white text-stone-600 border-stone-300'
               }`}
             >
               Pendentes
             </button>
             <button
               onClick={() => setFiltroStatus('Concluído')}
-              className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${
-                filtroStatus === 'Concluído' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700'
+              className={`px-3 py-1.5 border uppercase tracking-wider text-[11px] ${
+                filtroStatus === 'Concluído' ? 'bg-pastel-blue text-pastel-blue-dark border-pastel-blue-dark font-bold' : 'bg-white text-stone-600 border-stone-300'
               }`}
             >
               Concluídos
@@ -158,64 +151,62 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
           </div>
         </div>
 
-        {/* Listagem */}
+        {/* Listagem com Sharp Angles */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <th className="py-3 px-6">Horário</th>
-                <th className="py-3 px-6">Cliente</th>
-                <th className="py-3 px-6">Serviço</th>
-                <th className="py-3 px-6">Valor</th>
-                <th className="py-3 px-6">Status (RNF06)</th>
-                <th className="py-3 px-6 text-right">Ações (RF08)</th>
+              <tr className="bg-pastel-cream border-b border-stone-300 text-[11px] font-mono font-bold uppercase tracking-wider text-stone-500">
+                <th className="py-3.5 px-6">Horário</th>
+                <th className="py-3.5 px-6">Cliente</th>
+                <th className="py-3.5 px-6">Serviço</th>
+                <th className="py-3.5 px-6">Valor</th>
+                <th className="py-3.5 px-6">Status (RNF06)</th>
+                <th className="py-3.5 px-6 text-right">Ações (RF08)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
+            <tbody className="divide-y divide-stone-200 text-xs">
               {listaFiltrada.map(item => (
-                <tr key={item.id_agendamento} className="hover:bg-slate-50/80 transition">
-                  <td className="py-4 px-6 font-bold text-slate-900">
+                <tr key={item.id_agendamento} className="hover:bg-pastel-cream/50 transition">
+                  <td className="py-4 px-6 font-mono font-bold text-stone-900">
                     {new Date(item.data_hora_inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -{' '}
                     {new Date(item.data_hora_fim).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td className="py-4 px-6">
-                    <p className="font-bold text-slate-800">{item.cliente_nome}</p>
-                    <p className="text-[11px] text-slate-400">{item.cliente_telefone}</p>
+                    <p className="font-bold text-stone-900">{item.cliente_nome}</p>
+                    <p className="text-[11px] font-mono text-stone-400">{item.cliente_telefone}</p>
                   </td>
-                  <td className="py-4 px-6 text-slate-600">{item.servico_titulo}</td>
-                  <td className="py-4 px-6 font-bold text-slate-900">
+                  <td className="py-4 px-6 text-stone-700">{item.servico_titulo}</td>
+                  <td className="py-4 px-6 font-mono font-bold text-stone-900">
                     R$ {item.servico_preco.toFixed(2).replace('.', ',')}
                   </td>
                   <td className="py-4 px-6">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusBadge(item.status)}`}>
+                    <span className={`inline-block px-2.5 py-1 text-[10px] uppercase tracking-wider border font-mono ${getStatusBadge(item.status)}`}>
                       {item.status}
                     </span>
                   </td>
-                  <td className="py-4 px-6 text-right space-x-2">
+                  <td className="py-4 px-6 text-right space-x-3 font-mono text-xs">
                     {item.status !== 'Concluído' && (
                       <button
                         onClick={() => alterarStatus(item.id_agendamento, 'Concluído')}
-                        className="text-emerald-600 hover:text-emerald-800 font-bold inline-flex items-center"
-                        title="Concluir Atendimento"
+                        className="text-stone-900 hover:text-pastel-sage-dark font-bold underline"
                       >
-                        <Check className="w-4 h-4 mr-1" /> Concluir
+                        Concluir
                       </button>
                     )}
                     {item.status !== 'Cancelado' && item.status !== 'Concluído' && (
                       <button
                         onClick={() => alterarStatus(item.id_agendamento, 'Cancelado')}
-                        className="text-red-500 hover:text-red-700 font-bold inline-flex items-center"
-                        title="Cancelar"
+                        className="text-stone-500 hover:text-stone-800 underline"
                       >
-                        <X className="w-4 h-4 mr-1" /> Cancelar
+                        Cancelar
                       </button>
                     )}
                     {item.status === 'Concluído' && (
                       <button
                         onClick={() => onNavigate('avaliacao')}
-                        className="text-indigo-600 hover:text-indigo-800 font-bold inline-flex items-center"
+                        className="text-stone-900 hover:underline font-bold"
                       >
-                        <Eye className="w-4 h-4 mr-1" /> Avaliação
+                        Avaliação
                       </button>
                     )}
                   </td>

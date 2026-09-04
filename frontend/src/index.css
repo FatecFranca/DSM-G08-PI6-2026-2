@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+@layer base {
+  body {
+    background-color: #FAF9F6;
+    color: #262626;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: -0.01em;
+  }
+
+  /* Sharp minimalist aesthetics */
+  * {
+    border-radius: 0px !important;
+  }
 }

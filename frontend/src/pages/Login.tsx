@@ -21,7 +21,7 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
     if (aba === 'login') {
       onNavigate(email.includes('prestador') ? 'dashboard' : 'agendamento');
     } else {
-      setMensagemSucesso('Conta criada com sucesso! Redirecionando...');
+      setMensagemSucesso('Conta cadastrada com sucesso! Redirecionando...');
       setTimeout(() => {
         setAba('login');
         setMensagemSucesso('');
@@ -30,141 +30,144 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-12">
-      <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-200/80 space-y-6">
+    <div className="max-w-md mx-auto px-4 py-16">
+      <div className="bg-white p-10 border border-stone-300 space-y-8">
         
-        {/* Toggle Abas */}
-        <div className="flex border-b border-slate-100 pb-2">
+        {/* Toggle Abas Minimalistas */}
+        <div className="flex border-b border-stone-300 font-mono text-xs uppercase tracking-wider">
           <button
             type="button"
             onClick={() => setAba('login')}
-            className={`flex-1 pb-3 text-sm font-bold border-b-2 transition ${
+            className={`flex-1 pb-3 font-bold border-b-2 transition ${
               aba === 'login'
-                ? 'text-indigo-600 border-indigo-600'
-                : 'text-slate-400 hover:text-slate-600 border-transparent'
+                ? 'text-stone-900 border-stone-900'
+                : 'text-stone-400 hover:text-stone-600 border-transparent'
             }`}
           >
-            Fazer Login
+            Acessar Conta
           </button>
           <button
             type="button"
             onClick={() => setAba('register')}
-            className={`flex-1 pb-3 text-sm font-bold border-b-2 transition ${
+            className={`flex-1 pb-3 font-bold border-b-2 transition ${
               aba === 'register'
-                ? 'text-indigo-600 border-indigo-600'
-                : 'text-slate-400 hover:text-slate-600 border-transparent'
+                ? 'text-stone-900 border-stone-900'
+                : 'text-stone-400 hover:text-stone-600 border-transparent'
             }`}
           >
-            Criar Conta
+            Novo Cadastro
           </button>
         </div>
 
         {mensagemSucesso && (
-          <div className="p-3 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl flex items-center space-x-2">
+          <div className="p-3 bg-pastel-sage text-pastel-sage-dark text-xs font-mono font-bold border border-pastel-sage-dark/30 flex items-center space-x-2">
             <CheckCircle className="w-4 h-4" />
             <span>{mensagemSucesso}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           
           {aba === 'register' && (
             <>
               {/* Seleção de Perfil (RF01) */}
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-600 mb-2">Perfil de Acesso:</label>
-                <div className="grid grid-cols-2 gap-3">
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-2 font-mono">
+                  Perfil de Usuário:
+                </label>
+                <div className="grid grid-cols-2 gap-2 font-mono text-xs">
                   <button
                     type="button"
                     onClick={() => setTipoPerfil('Cliente')}
-                    className={`p-3 rounded-xl border-2 text-xs font-bold transition flex items-center justify-center space-x-1.5 ${
+                    className={`p-3 border text-center font-bold uppercase tracking-wider transition ${
                       tipoPerfil === 'Cliente'
-                        ? 'bg-indigo-50 border-indigo-600 text-indigo-700'
-                        : 'border-slate-200 text-slate-600'
+                        ? 'bg-stone-900 text-white border-stone-900'
+                        : 'bg-pastel-cream text-stone-600 border-stone-300 hover:border-stone-500'
                     }`}
                   >
-                    <User className="w-4 h-4" />
-                    <span>Sou Cliente</span>
+                    Cliente
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setTipoPerfil('Prestador')}
-                    className={`p-3 rounded-xl border-2 text-xs font-bold transition flex items-center justify-center space-x-1.5 ${
+                    className={`p-3 border text-center font-bold uppercase tracking-wider transition ${
                       tipoPerfil === 'Prestador'
-                        ? 'bg-indigo-50 border-indigo-600 text-indigo-700'
-                        : 'border-slate-200 text-slate-600'
+                        ? 'bg-stone-900 text-white border-stone-900'
+                        : 'bg-pastel-cream text-stone-600 border-stone-300 hover:border-stone-500'
                     }`}
                   >
-                    <Building2 className="w-4 h-4" />
-                    <span>Sou Prestador</span>
+                    Prestador
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-600 mb-1.5">Nome Completo</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1 font-mono">
+                  Nome Completo
+                </label>
                 <div className="relative">
-                  <User className="w-4 h-4 absolute left-4 top-3 text-slate-400" />
+                  <User className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
                   <input
                     type="text"
                     required
                     value={nome}
                     onChange={e => setNome(e.target.value)}
                     placeholder="Seu nome completo"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-600"
+                    className="w-full pl-10 pr-4 py-2.5 bg-pastel-cream border border-stone-300 text-sm focus:outline-none focus:border-stone-900"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-600 mb-1.5">Telefone / WhatsApp</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1 font-mono">
+                  Telefone / WhatsApp
+                </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 absolute left-4 top-3 text-slate-400" />
+                  <Phone className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
                   <input
                     type="tel"
                     required
                     value={telefone}
                     onChange={e => setTelefone(e.target.value)}
                     placeholder="(11) 99999-9999"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-600"
+                    className="w-full pl-10 pr-4 py-2.5 bg-pastel-cream border border-stone-300 text-sm focus:outline-none focus:border-stone-900"
                   />
                 </div>
               </div>
 
-              {/* Campos adicionais para Prestador (RF02) */}
               {tipoPerfil === 'Prestador' && (
-                <div className="space-y-4 pt-2 border-t border-slate-100">
+                <div className="space-y-4 pt-2 border-t border-stone-200">
                   <div>
-                    <label className="block text-xs font-bold uppercase text-indigo-700 mb-1.5">
-                      Nome do Estabelecimento / Negócio
+                    <label className="block text-xs font-bold uppercase tracking-wider text-stone-800 mb-1 font-mono">
+                      Nome do Estabelecimento
                     </label>
                     <div className="relative">
-                      <Building2 className="w-4 h-4 absolute left-4 top-3 text-indigo-400" />
+                      <Building2 className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
                       <input
                         type="text"
                         required
                         value={nomeNegocio}
                         onChange={e => setNomeNegocio(e.target.value)}
                         placeholder="Ex: Barbearia Estilo, Studio Bella"
-                        className="w-full pl-10 pr-4 py-2.5 bg-indigo-50/40 border border-indigo-200 rounded-xl text-sm focus:outline-none focus:border-indigo-600"
+                        className="w-full pl-10 pr-4 py-2.5 bg-pastel-cream border border-stone-300 text-sm focus:outline-none focus:border-stone-900"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase text-indigo-700 mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-stone-800 mb-1 font-mono">
                       Endereço Completo
                     </label>
                     <div className="relative">
-                      <MapPin className="w-4 h-4 absolute left-4 top-3 text-indigo-400" />
+                      <MapPin className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
                       <input
                         type="text"
                         required
                         value={endereco}
                         onChange={e => setEndereco(e.target.value)}
                         placeholder="Rua, Número, Bairro, Cidade"
-                        className="w-full pl-10 pr-4 py-2.5 bg-indigo-50/40 border border-indigo-200 rounded-xl text-sm focus:outline-none focus:border-indigo-600"
+                        className="w-full pl-10 pr-4 py-2.5 bg-pastel-cream border border-stone-300 text-sm focus:outline-none focus:border-stone-900"
                       />
                     </div>
                   </div>
@@ -174,63 +177,65 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
           )}
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1.5">E-mail</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1 font-mono">
+              E-mail
+            </label>
             <div className="relative">
-              <Mail className="w-4 h-4 absolute left-4 top-3 text-slate-400" />
+              <Mail className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-600"
+                className="w-full pl-10 pr-4 py-2.5 bg-pastel-cream border border-stone-300 text-sm focus:outline-none focus:border-stone-900 font-mono"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1.5">Senha</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1 font-mono">
+              Senha
+            </label>
             <div className="relative">
-              <Lock className="w-4 h-4 absolute left-4 top-3 text-slate-400" />
+              <Lock className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
               <input
                 type="password"
                 required
                 value={senha}
                 onChange={e => setSenha(e.target.value)}
                 placeholder="Sua senha secreta"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-600"
+                className="w-full pl-10 pr-4 py-2.5 bg-pastel-cream border border-stone-300 text-sm focus:outline-none focus:border-stone-900 font-mono"
               />
             </div>
-            <p className="text-[10px] text-slate-400 mt-1">Criptografia com hash bcrypt no banco (RNF03)</p>
+            <p className="text-[10px] text-stone-400 font-mono mt-1">Hash bcrypt no banco (RNF03)</p>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-600/25 transition"
+            className="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs uppercase tracking-wider py-4 border border-stone-900 transition"
           >
-            {aba === 'login' ? 'Entrar na Plataforma' : 'Finalizar Cadastro'}
+            {aba === 'login' ? 'Acessar Plataforma' : 'Concluir Cadastro'}
           </button>
 
           {aba === 'login' && (
-            <div className="pt-2 text-center">
-              <p className="text-xs text-slate-500">
-                Acessos de demonstração:{' '}
-                <button
-                  type="button"
-                  onClick={() => setEmail('prestador@exemplo.com')}
-                  className="text-indigo-600 font-bold hover:underline"
-                >
-                  Prestador
-                </button>
-                {' | '}
-                <button
-                  type="button"
-                  onClick={() => setEmail('cliente@exemplo.com')}
-                  className="text-indigo-600 font-bold hover:underline"
-                >
-                  Cliente
-                </button>
-              </p>
+            <div className="pt-2 text-center text-xs font-mono text-stone-500">
+              Alternar acesso demonstrativo:{' '}
+              <button
+                type="button"
+                onClick={() => setEmail('prestador@exemplo.com')}
+                className="text-stone-900 font-bold underline"
+              >
+                Prestador
+              </button>
+              {' • '}
+              <button
+                type="button"
+                onClick={() => setEmail('cliente@exemplo.com')}
+                className="text-stone-900 font-bold underline"
+              >
+                Cliente
+              </button>
             </div>
           )}
 
