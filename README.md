@@ -124,15 +124,28 @@ O objetivo central desta primeira entrega consiste na concepção integral do es
 
 ---
 
-### 3. Visualizando os Protótipos do Front-end
+### 3. Executando o Front-end (Vite + React + TypeScript + Tailwind CSS)
 
-As telas foram desenvolvidas com **HTML5 semântico** e **Tailwind CSS via CDN**, permitindo que sejam abertas diretamente com um duplo clique em qualquer navegador, sem necessidade de servidores de build:
+1. Acesse o diretório do front-end:
+   ```bash
+   cd frontend
+   ```
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
+3. Inicie o servidor de desenvolvimento do Vite:
+   ```bash
+   npm run dev
+   ```
+   *Acesse no navegador:* `http://localhost:5173`
 
-- **Página Inicial:** [frontend/index.html](frontend/index.html)
-- **Login e Cadastro:** [frontend/login.html](frontend/login.html)
-- **Agendamento de Serviços:** [frontend/agendamento.html](frontend/agendamento.html)
-- **Dashboard do Prestador:** [frontend/dashboard-prestador.html](frontend/dashboard-prestador.html)
-- **Avaliação Pós-Atendimento:** [frontend/avaliacao.html](frontend/avaliacao.html)
+#### Telas e Módulos Implementados:
+- **Página Inicial (Home):** Hero interativo, apresentação e cards de acesso rápido
+- **Fluxo de Agendamento (Core):** Seleção de serviço, cálculo de slots livres em tempo real e anti-double booking (RF05, RF06, RF07)
+- **Painel do Prestador (Dashboard):** Métricas de faturamento, satisfação e grade com cores semafóricas (RF08, RF11, RNF06)
+- **Avaliações & IA de Sentimento:** Feedback pós-atendimento com classificação por Machine Learning em tempo real (RF09, RF10, RNF02)
+- **Autenticação & Registro:** Perfis segregados para Cliente e Prestador com campos específicos de estabelecimento (RF01, RF02, RNF03)
 
 ---
 
