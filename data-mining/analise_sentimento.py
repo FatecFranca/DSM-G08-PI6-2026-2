@@ -1,7 +1,8 @@
 """
 Projeto Interdisciplinar (PI) – 6º Semestre
 Disciplina-Satélite: Mineração de Dados
-Script de Treinamento e Inferência de Sentimentos (NLP / Classificação)
+Base de Dados de Referência: Yelp Dataset (Kaggle) - https://www.kaggle.com/datasets/yelp-dataset/yelp-dataset
+Script de Treinamento e Inferência de Sentimentos (NLP / Classificação Supervisionada)
 Atende aos requisitos: RF09, RF10 e RNF02 (< 1s de inferência).
 """
 

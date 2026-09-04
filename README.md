@@ -34,7 +34,7 @@ O objetivo central desta primeira entrega consiste na concepção integral do es
 | **5. Protótipo inicial do front-end** | ✅ Concluído | [frontend/](frontend/) (5 telas estáticas responsivas baseadas no Figma/Canva com Tailwind CSS) |
 | **6. Banco de dados modelado** | ✅ Concluído | [docs/03_banco_de_dados_conceitual_e_logico.md](docs/03_banco_de_dados_conceitual_e_logico.md) e DDL [docs/schema.sql](docs/schema.sql) |
 | **7. Computação em Nuvem II** | ✅ Concluído | [docs/04_computacao_em_nuvem_II.md](docs/04_computacao_em_nuvem_II.md) (Arquitetura AWS com ECS, RDS, S3, CloudFront e IAM) |
-| **8. Mineração de Dados** | ✅ Concluído | [docs/05_mineracao_de_dados.md](docs/05_mineracao_de_dados.md), [data-mining/dataset_avaliacoes_exemplo.csv](data-mining/dataset_avaliacoes_exemplo.csv) e [data-mining/analise_sentimento.py](data-mining/analise_sentimento.py) |
+| **8. Mineração de Dados** | ✅ Concluído | [docs/05_mineracao_de_dados.md](docs/05_mineracao_de_dados.md) (Base de referência [Yelp Dataset - Kaggle](https://www.kaggle.com/datasets/yelp-dataset/yelp-dataset), [data-mining/dataset_avaliacoes_exemplo.csv](data-mining/dataset_avaliacoes_exemplo.csv) e [data-mining/analise_sentimento.py](data-mining/analise_sentimento.py)) |
 
 ---
 

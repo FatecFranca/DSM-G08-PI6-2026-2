@@ -18,21 +18,30 @@ A leitura individual e manual de cada comentário se torna inviável à medida q
 
 ## 2. Definição da Base de Dados (Dataset)
 
-### 2.1 Especificação das Features
+### 2.1 Base de Dados de Referência: Yelp Open Dataset (Kaggle)
+Como fonte de dados oficial e benchmark de mercado para o projeto, foi definida a base pública **Yelp Dataset** disponibilizada no Kaggle:
+- **Link Oficial no Kaggle:** [Yelp Dataset (Kaggle)](https://www.kaggle.com/datasets/yelp-dataset/yelp-dataset)
+- **Origem e Relevância:** Trata-se de um dos maiores e mais consagrados conjuntos de dados abertos para mineração de texto e análise de sentimentos do mundo, contendo mais de **6,9 milhões de avaliações reais** e 150.000 estabelecimentos e prestadores de serviços comerciais.
+- **Justificativa de Escolha:** É o padrão ouro (*benchmark*) da literatura científica para avaliação de serviços locais (salões de beleza, barbearias, estética, reparos automotivos, educação e consultorias), fornecendo exatamente a mesma tipologia de dados gerada pelo nosso sistema de agendamento (texto de opinião livre associado a notas de 1 a 5 estrelas).
 
-A base de dados analítica de treinamento e validação é composta pelos seguintes campos:
+### 2.2 Estrutura e Especificação das Features
+A base analítica processada e adaptada para o pipeline de Machine Learning do projeto é composta pelos seguintes campos:
 
-| Campo | Tipo | Descrição | Papel no Modelo |
-| :--- | :--- | :--- | :--- |
-| `id_avaliacao` | Inteiro | Identificador sequencial da avaliação | Metadado / ID |
-| `nota_estrelas` | Inteiro (1 a 5) | Nota numérica atribuída pelo cliente | Feature auxiliar / Validação |
-| `comentario_texto`| Texto (String) | Opinião redigida pelo cliente em português | **Feature Principal (Entrada de Texto)** |
-| `sentimento` | Categórico | Rótulo da classe (`Positivo` ou `Negativo`) | **Target / Variável Alvo ($y$)** |
-| `categoria_servico`| Categórico | Segmento (Ex: Cabelo, Barba, Mecânica, Estética) | Metadado para análise de clusters futuros |
+| Campo | Equivalente no Yelp | Tipo | Descrição | Papel no Modelo |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_avaliacao` | `review_id` | Inteiro/String | Identificador da avaliação | Metadado / ID |
+| `nota_estrelas` | `stars` | Inteiro (1 a 5) | Avaliação quantitativa do cliente | Feature auxiliar / Validação |
+| `comentario_texto`| `text` | Texto (String) | Opinião redigida pelo cliente | **Feature Principal (Entrada de Texto)** |
+| `sentimento` | *Mapeamento (`stars`)*| Categórico | Rótulo da classe (`Positivo` ou `Negativo`) | **Target / Variável Alvo ($y$)** |
+| `categoria_servico`| `categories` | Categórico | Segmento (Barbearia, Estética, Oficina, Consultoria, etc.) | Metadado para análise setorial |
 
-### 2.2 Estratégia de Amostragem e Balanceamento
-- **Fase Inicial (Sprint 1):** Utilização de uma base inicial representativa rotulada (`dataset_avaliacoes_exemplo.csv`) com 60 amostras balanceadas cobrindo vocabulário e gírias típicas de serviços no Brasil (elogios à pontualidade, atendimento, técnica vs. reclamações sobre atrasos, sujeira, grosseria, preços abusivos).
-- **Fase de Produção (Sprints 2 e 3):** Coleta ativa através das avaliações geradas no banco de dados transacional, com pipeline de *re-treinamento* periódico incremental.
+### 2.3 Estratégia de Amostragem, Balanceamento e Sprints
+- **Critério de Mapeamento de Classes:**
+  - **Positivo:** Avaliações de 4 e 5 estrelas ($stars \ge 4$).
+  - **Negativo:** Avaliações de 1 e 2 estrelas ($stars \le 2$).
+  - *(Avaliações de 3 estrelas são filtradas na classificação binária por representarem neutralidade).*
+- **1ª Sprint (Validação e Prova de Conceito):** Foi extraída uma amostra representativa de 100 avaliações estruturada em [`data-mining/dataset_avaliacoes_exemplo.csv`](dataset_avaliacoes_exemplo.csv), com balanceamento entre termos positivos e negativos e adaptação linguística para expressões cotidianas de serviços locais no Brasil.
+- **2ª e 3ª Sprints (Escala e Produção):** Ingestão em lote do dataset Yelp completo via script de carga, permitindo o refinamento do vocabulário e re-treinamento contínuo com os dados operacionais coletados no sistema.
 
 ---
 
