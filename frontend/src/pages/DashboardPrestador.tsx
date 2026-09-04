@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Appointment } from '../types';
-import { Users, DollarSign, Star, Brain, Check, X, Eye } from 'lucide-react';
+import { Appointment, Service } from '../types';
+import { Users, DollarSign, Star, Brain, Check, X, Eye, Plus, Scissors, Clock } from 'lucide-react';
+import { ModalNovoServico } from '../components/ModalNovoServico';
 
 interface DashboardProps {
   onNavigate: (page: string) => void;
@@ -9,10 +10,14 @@ interface DashboardProps {
 
 export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => {
   const [agendamentos, setAgendamentos] = useState<Appointment[]>([]);
+  const [servicos, setServicos] = useState<Service[]>([]);
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const [modalAberto, setModalAberto] = useState<boolean>(false);
+  const [mensagemSucesso, setMensagemSucesso] = useState<string>('');
 
   useEffect(() => {
     api.getAppointments(1).then(data => setAgendamentos(data));
+    api.getServices(1).then(data => setServicos(data));
   }, []);
 
   const alterarStatus = (id: number, novoStatus: 'Confirmado' | 'Cancelado' | 'Concluído') => {
@@ -21,12 +26,17 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
     );
   };
 
+  const handleServiceCreated = (novo: Service) => {
+    setServicos(prev => [novo, ...prev]);
+    setMensagemSucesso(`Serviço "${novo.titulo}" cadastrado e liberado para agendamentos!`);
+    setTimeout(() => setMensagemSucesso(''), 4000);
+  };
+
   const listaFiltrada = agendamentos.filter(a => {
     if (filtroStatus === 'todos') return true;
     return a.status === filtroStatus;
   });
 
-  // Indicadores semafóricos em tons pastéis e ângulos retos (RNF06)
   const getStatusBadge = (status: Appointment['status']) => {
     switch (status) {
       case 'Confirmado':
@@ -50,17 +60,30 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
         <div>
           <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Módulo Administrativo</span>
           <h1 className="text-3xl font-normal text-stone-900 tracking-tight mt-1">Painel do Prestador (RF11)</h1>
-          <p className="text-xs text-stone-500 font-light mt-1">Visão analítica de horários, faturamento e índices de sentimento.</p>
+          <p className="text-xs text-stone-500 font-light mt-1">Gestão de catálogo, horários, métricas financeiras e índices de IA.</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => onNavigate('agendamento')}
-            className="bg-stone-900 hover:bg-stone-800 text-white text-xs uppercase tracking-wider font-bold px-6 py-3 border border-stone-900 transition"
+            onClick={() => setModalAberto(true)}
+            className="bg-stone-900 hover:bg-stone-800 text-white text-xs uppercase tracking-wider font-bold px-6 py-3 border border-stone-900 transition flex items-center space-x-2"
           >
-            Novo Agendamento
+            <Plus className="w-4 h-4 text-pastel-sage" />
+            <span>Cadastrar Serviço</span>
           </button>
         </div>
       </div>
+
+      {mensagemSucesso && (
+        <div className="p-4 bg-pastel-sage text-pastel-sage-dark text-xs font-mono font-bold border border-pastel-sage-dark/30 flex items-center justify-between">
+          <span>{mensagemSucesso}</span>
+          <button
+            onClick={() => onNavigate('agendamento')}
+            className="underline uppercase tracking-wider text-stone-900 font-extrabold ml-4"
+          >
+            Ver no Agendamento →
+          </button>
+        </div>
+      )}
 
       {/* Cards de Métricas em Tons Pastéis com Sharp Corners */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -82,7 +105,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
           <h3 className="text-3xl font-mono font-light text-stone-900">
             R$ {agendamentos.reduce((acc, a) => acc + a.servico_preco, 0).toFixed(2).replace('.', ',')}
           </h3>
-          <p className="text-[11px] font-mono text-stone-500">Receita estimada diária</p>
+          <p className="text-[11px] font-mono text-stone-500">Receita total da data</p>
         </div>
 
         <div className="bg-pastel-cream p-6 border border-stone-300 space-y-2">
@@ -105,14 +128,49 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
 
       </div>
 
-      {/* Tabela de Agendamentos Minimalista */}
+      {/* Catálogo de Serviços do Prestador (RF03) */}
+      <div className="bg-white border border-stone-300 p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+          <div>
+            <h2 className="text-base font-bold uppercase tracking-wider text-stone-900">Catálogo de Serviços Ofertados (RF03)</h2>
+            <p className="text-xs text-stone-500 font-mono">Serviços ativos configurados pelo prestador para agendamento.</p>
+          </div>
+          <button
+            onClick={() => setModalAberto(true)}
+            className="text-xs font-mono font-bold uppercase tracking-wider bg-pastel-sand hover:bg-stone-200 text-stone-800 px-4 py-2 border border-stone-300 flex items-center space-x-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Adicionar Serviço</span>
+          </button>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 font-mono text-xs">
+          {servicos.map(s => (
+            <div key={s.id_servico} className="p-4 border border-stone-200 bg-pastel-cream space-y-2">
+              <div className="flex justify-between items-start">
+                <span className="font-bold text-stone-900 line-clamp-1">{s.titulo}</span>
+                <span className="bg-pastel-sage text-pastel-sage-dark px-1.5 py-0.5 text-[9px] uppercase font-bold border border-pastel-sage-dark/30">
+                  Ativo
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-500 font-sans line-clamp-2">{s.descricao || 'Sem descrição cadastrada'}</p>
+              <div className="flex justify-between items-center pt-2 border-t border-stone-200 text-[11px]">
+                <span className="text-stone-500 flex items-center"><Clock className="w-3 h-3 mr-1" /> {s.duracao_minutos} min</span>
+                <span className="font-bold text-stone-900">R$ {s.preco.toFixed(2).replace('.', ',')}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Tabela de Agendamentos */}
       <div className="bg-white border border-stone-300 space-y-4">
         
         {/* Filtros e Legenda Semafórica (RNF06) */}
         <div className="p-6 border-b border-stone-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-bold uppercase tracking-wider text-stone-900">Grade de Compromissos</h2>
-            <p className="text-xs text-stone-500 font-mono mt-0.5">Padrão visual semafórico pastel para identificação rápida.</p>
+            <h2 className="text-base font-bold uppercase tracking-wider text-stone-900">Grade de Agendamentos</h2>
+            <p className="text-xs text-stone-500 font-mono mt-0.5">Indicadores semafóricos pasteis para identificação ágil.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
@@ -151,7 +209,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
           </div>
         </div>
 
-        {/* Listagem com Sharp Angles */}
+        {/* Listagem */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -217,6 +275,13 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
         </div>
 
       </div>
+
+      {/* Modal de Cadastro de Novo Serviço */}
+      <ModalNovoServico
+        isOpen={modalAberto}
+        onClose={() => setModalAberto(false)}
+        onServiceCreated={handleServiceCreated}
+      />
 
     </div>
   );
