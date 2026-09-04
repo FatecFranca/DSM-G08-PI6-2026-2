@@ -46,7 +46,10 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
   };
 
   const handleServiceCreated = (novo: Service) => {
-    setServicos(prev => [novo, ...prev]);
+    setServicos(prev => [
+      novo,
+      ...prev.filter(s => s.id_servico !== novo.id_servico && s.titulo.toLowerCase().trim() !== novo.titulo.toLowerCase().trim())
+    ]);
     setMensagemSucesso(`Serviço "${novo.titulo}" cadastrado com sucesso!`);
     setTimeout(() => setMensagemSucesso(''), 4000);
   };
@@ -62,7 +65,10 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
     if (!confirmou) return;
 
     await api.deleteService(servico.id_servico);
-    setServicos(prev => prev.filter(s => s.id_servico !== servico.id_servico));
+    setServicos(prev => prev.filter(s => 
+      s.id_servico !== servico.id_servico && 
+      !(s.titulo.toLowerCase().trim() === servico.titulo.toLowerCase().trim() && s.id_prestador === servico.id_prestador)
+    ));
     setMensagemSucesso(`Serviço "${servico.titulo}" removido do catálogo.`);
     setTimeout(() => setMensagemSucesso(''), 4000);
   };

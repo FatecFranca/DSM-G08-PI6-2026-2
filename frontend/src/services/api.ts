@@ -78,7 +78,29 @@ const AGENDAMENTOS_PADRAO: Appointment[] = [
 function getStoredServices(): Service[] {
   try {
     const data = localStorage.getItem('agendou_servicos_v3');
-    if (data) return JSON.parse(data);
+    if (data) {
+      const parsed: Service[] = JSON.parse(data);
+      // Deduplicar entradas corrompidas ou repetidas pelo mesmo título normalizado
+      const mapa = new Map<string, Service>();
+      parsed.forEach(s => {
+        if (!s || !s.titulo) return;
+        const chave = `${s.id_prestador}_${s.titulo.toLowerCase().trim()}`;
+        if (!mapa.has(chave)) {
+          mapa.set(chave, s);
+        } else {
+          const existente = mapa.get(chave)!;
+          // Prioriza o ID menor/mais estável (geralmente gerado pelo backend)
+          if (s.id_servico < existente.id_servico) {
+            mapa.set(chave, s);
+          }
+        }
+      });
+      const deduplicados = Array.from(mapa.values());
+      if (deduplicados.length !== parsed.length) {
+        saveStoredServices(deduplicados);
+      }
+      return deduplicados;
+    }
   } catch (_) {}
   return SERVICOS_INICIAIS;
 }
@@ -139,17 +161,41 @@ export const api = {
 
   // RF03: Serviços (Listar)
   async getServices(providerId?: number): Promise<Service[]> {
-    const locais = getStoredServices().filter(s => s.ativo);
+    let locais = getStoredServices().filter(s => s.ativo);
+    if (providerId) {
+      locais = locais.filter(s => s.id_prestador === providerId);
+    }
     try {
       const url = providerId ? `${API_BASE}/services?providerId=${providerId}` : `${API_BASE}/services`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         if (data.services && data.services.length > 0) {
-          const mapa = new Map<number, Service>();
-          data.services.forEach((s: Service) => { if (s.ativo) mapa.set(s.id_servico, s); });
-          locais.forEach(s => { if (s.ativo) mapa.set(s.id_servico, s); });
-          return Array.from(mapa.values());
+          const mapa = new Map<string, Service>();
+
+          // 1. Inserir serviços vindos da API backend
+          data.services.forEach((s: Service) => {
+            if (s.ativo) {
+              const chave = `${s.id_prestador}_${s.titulo.toLowerCase().trim()}`;
+              mapa.set(chave, s);
+            }
+          });
+
+          // 2. Incorporar locais se não estiverem no backend
+          locais.forEach(s => {
+            if (s.ativo) {
+              const chave = `${s.id_prestador}_${s.titulo.toLowerCase().trim()}`;
+              if (!mapa.has(chave)) {
+                mapa.set(chave, s);
+              }
+            }
+          });
+
+          const listaFinal = Array.from(mapa.values());
+          if (providerId) {
+            return listaFinal.filter(s => s.id_prestador === providerId);
+          }
+          return listaFinal;
         }
       }
     } catch (_) {}
@@ -165,26 +211,40 @@ export const api = {
     preco: number;
   }): Promise<Service> {
     const user = this.getCurrentUser();
-    const novoServico: Service = {
+    let novoServico: Service = {
       id_servico: Date.now(),
       id_prestador: servico.id_prestador || user.id_usuario,
-      titulo: servico.titulo,
-      descricao: servico.descricao || '',
+      titulo: servico.titulo.trim(),
+      descricao: servico.descricao ? servico.descricao.trim() : '',
       duracao_minutos: Number(servico.duracao_minutos),
       preco: Number(servico.preco),
       ativo: true
     };
 
     try {
-      await fetch(`${API_BASE}/services`, {
+      const res = await fetch(`${API_BASE}/services`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(novoServico)
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.service && data.service.id_servico) {
+          novoServico = {
+            ...novoServico,
+            id_servico: Number(data.service.id_servico)
+          };
+        }
+      }
     } catch (_) {}
 
     const atuais = getStoredServices();
-    const atualizados = [novoServico, ...atuais];
+    const chaveNova = `${novoServico.id_prestador}_${novoServico.titulo.toLowerCase().trim()}`;
+    const filtrados = atuais.filter(s => {
+      const chave = `${s.id_prestador}_${s.titulo.toLowerCase().trim()}`;
+      return s.id_servico !== novoServico.id_servico && chave !== chaveNova;
+    });
+    const atualizados = [novoServico, ...filtrados];
     saveStoredServices(atualizados);
 
     return novoServico;
@@ -210,8 +270,8 @@ export const api = {
     if (index !== -1) {
       atuais[index] = {
         ...atuais[index],
-        titulo: dados.titulo,
-        descricao: dados.descricao,
+        titulo: dados.titulo.trim(),
+        descricao: dados.descricao ? dados.descricao.trim() : '',
         duracao_minutos: Number(dados.duracao_minutos),
         preco: Number(dados.preco)
       };
@@ -224,14 +284,22 @@ export const api = {
 
   // RF03: Excluir / Desativar Serviço (Disponível para Criador ou Admin)
   async deleteService(id: number): Promise<void> {
+    const atuais = getStoredServices();
+    const servicoAlvo = atuais.find(s => s.id_servico === id);
+
     try {
       await fetch(`${API_BASE}/services/${id}`, {
         method: 'DELETE'
       });
     } catch (_) {}
 
-    const atuais = getStoredServices();
-    const atualizados = atuais.filter(s => s.id_servico !== id);
+    const atualizados = atuais.filter(s => {
+      if (s.id_servico === id) return false;
+      if (servicoAlvo && s.id_prestador === servicoAlvo.id_prestador && s.titulo.toLowerCase().trim() === servicoAlvo.titulo.toLowerCase().trim()) {
+        return false;
+      }
+      return true;
+    });
     saveStoredServices(atualizados);
   },
 

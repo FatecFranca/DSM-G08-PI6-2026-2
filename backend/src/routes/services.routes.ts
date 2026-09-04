@@ -12,25 +12,56 @@ router.get('/', (req: Request, res: Response) => {
     servicos = servicos.filter(s => s.id_prestador === providerId);
   }
 
+  // Deduplicação preventiva por título
+  const mapa = new Map<string, typeof servicos[0]>();
+  servicos.forEach(s => {
+    const chave = `${s.id_prestador}_${s.titulo.toLowerCase().trim()}`;
+    if (!mapa.has(chave)) {
+      mapa.set(chave, s);
+    }
+  });
+
+  const listaFinal = Array.from(mapa.values());
+
   return res.json({
-    total: servicos.length,
-    services: servicos
+    total: listaFinal.length,
+    services: listaFinal
   });
 });
 
 // RF03 - Cadastrar Novo Serviço (Prestador)
 router.post('/', (req: Request, res: Response) => {
-  const { id_prestador, titulo, descricao, duracao_minutos, preco } = req.body;
+  const { id_servico, id_prestador, titulo, descricao, duracao_minutos, preco } = req.body;
 
   if (!id_prestador || !titulo || !duracao_minutos || preco === undefined) {
     return res.status(400).json({ error: 'Campos obrigatórios: id_prestador, titulo, duracao_minutos, preco' });
   }
 
+  // Prevenir duplicidade no banco por título para o mesmo prestador
+  const existenteIndex = db.servicos.findIndex(s => 
+    s.id_prestador === Number(id_prestador) && 
+    s.titulo.toLowerCase().trim() === titulo.toLowerCase().trim()
+  );
+
+  if (existenteIndex !== -1) {
+    db.servicos[existenteIndex].ativo = true;
+    db.servicos[existenteIndex].preco = Number(preco);
+    db.servicos[existenteIndex].duracao_minutos = Number(duracao_minutos);
+    if (descricao) db.servicos[existenteIndex].descricao = descricao;
+    return res.status(200).json({
+      message: 'Serviço já existente atualizado no catálogo.',
+      service: db.servicos[existenteIndex]
+    });
+  }
+
+  const maxId = db.servicos.reduce((max, s) => (s.id_servico < 1000000 ? Math.max(max, s.id_servico) : max), 0);
+  const novoId = maxId + 1;
+
   const novoServico = {
-    id_servico: db.servicos.length + 1,
+    id_servico: (id_servico && Number(id_servico) < 1000000) ? Number(id_servico) : novoId,
     id_prestador: Number(id_prestador),
-    titulo,
-    descricao: descricao || '',
+    titulo: titulo.trim(),
+    descricao: descricao ? descricao.trim() : '',
     duracao_minutos: Number(duracao_minutos),
     preco: Number(preco),
     ativo: true
@@ -64,16 +95,16 @@ router.put('/:id', (req: Request, res: Response) => {
   });
 });
 
-// RF03 - Desativar Serviço
+// RF03 - Desativar / Excluir Serviço
 router.delete('/:id', (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const servico = db.servicos.find(s => s.id_servico === id);
+  const index = db.servicos.findIndex(s => s.id_servico === id);
 
-  if (!servico) {
+  if (index === -1) {
     return res.status(404).json({ error: 'Serviço não encontrado.' });
   }
 
-  servico.ativo = false;
+  db.servicos[index].ativo = false;
   return res.json({ message: 'Serviço desativado com sucesso!' });
 });
 
