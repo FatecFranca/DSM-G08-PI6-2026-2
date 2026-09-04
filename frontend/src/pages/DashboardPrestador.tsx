@@ -262,23 +262,40 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
 
                   {/* Ações de Edição e Exclusão */}
                   {podeGerenciar && (
-                    <div className="flex items-center space-x-2 pt-2 border-t border-stone-200">
-                      <button
-                        onClick={() => abrirEdicao(s)}
-                        className="flex-1 py-1.5 px-2 bg-white hover:bg-pastel-sand border border-stone-300 text-stone-800 font-bold uppercase tracking-wider text-[10px] flex items-center justify-center space-x-1 transition"
-                        title="Editar nome, descrição, duração e valor"
-                      >
-                        <Edit3 className="w-3 h-3 text-stone-600" />
-                        <span>Editar</span>
-                      </button>
+                    <div className="space-y-2 pt-2 border-t border-stone-200">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => abrirEdicao(s)}
+                          className="flex-1 py-1.5 px-2 bg-white hover:bg-pastel-sand border border-stone-300 text-stone-800 font-bold uppercase tracking-wider text-[10px] flex items-center justify-center space-x-1 transition"
+                          title="Editar nome, descrição, duração e valor"
+                        >
+                          <Edit3 className="w-3 h-3 text-stone-600" />
+                          <span>Editar</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleExcluirServico(s)}
+                          className="py-1.5 px-2.5 bg-pastel-peach hover:bg-red-100 border border-pastel-peach-dark/30 text-pastel-peach-dark font-bold uppercase tracking-wider text-[10px] flex items-center justify-center space-x-1 transition"
+                          title="Excluir este serviço do catálogo"
+                        >
+                          <Trash2 className="w-3 h-3 text-red-600" />
+                          <span>Excluir</span>
+                        </button>
+                      </div>
 
                       <button
-                        onClick={() => handleExcluirServico(s)}
-                        className="py-1.5 px-2.5 bg-pastel-peach hover:bg-red-100 border border-pastel-peach-dark/30 text-pastel-peach-dark font-bold uppercase tracking-wider text-[10px] flex items-center justify-center space-x-1 transition"
-                        title="Excluir este serviço do catálogo"
+                        onClick={() => {
+                          localStorage.setItem('agendou_avaliacao_alvo', JSON.stringify({
+                            id_servico: s.id_servico,
+                            servico_titulo: s.titulo
+                          }));
+                          onNavigate('avaliacao');
+                        }}
+                        className="w-full py-1.5 px-2 bg-pastel-lavender hover:bg-pastel-lavender/80 border border-pastel-lavender-dark/30 text-pastel-lavender-dark font-bold uppercase tracking-wider text-[10px] flex items-center justify-center space-x-1.5 transition"
+                        title="Avaliar este serviço com análise de sentimento via IA"
                       >
-                        <Trash2 className="w-3 h-3 text-red-600" />
-                        <span>Excluir</span>
+                        <Brain className="w-3 h-3" />
+                        <span>Avaliar com IA (NLP)</span>
                       </button>
                     </div>
                   )}
@@ -420,10 +437,19 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
                       )}
                       {item.status === 'Concluído' && (
                         <button
-                          onClick={() => onNavigate('avaliacao')}
+                          onClick={() => {
+                            localStorage.setItem('agendou_avaliacao_alvo', JSON.stringify({
+                              id_agendamento: item.id_agendamento,
+                              id_servico: item.id_servico,
+                              servico_titulo: item.servico_titulo,
+                              cliente_nome: item.cliente_nome,
+                              data_hora: item.data_hora_inicio
+                            }));
+                            onNavigate('avaliacao');
+                          }}
                           className="text-stone-900 hover:underline font-bold"
                         >
-                          Avaliação
+                          Avaliação (NLP)
                         </button>
                       )}
                     </td>

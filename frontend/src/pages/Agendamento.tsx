@@ -334,6 +334,20 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
                 Continuar Agendando
               </button>
               <button
+                onClick={() => {
+                  if (servicoSelecionado) {
+                    localStorage.setItem('agendou_avaliacao_alvo', JSON.stringify({
+                      id_servico: servicoSelecionado.id_servico,
+                      servico_titulo: servicoSelecionado.titulo
+                    }));
+                  }
+                  onNavigate('avaliacao');
+                }}
+                className="w-full bg-pastel-lavender hover:bg-pastel-lavender/80 text-pastel-lavender-dark text-xs font-bold uppercase tracking-wider py-3 border border-pastel-lavender-dark/30 transition flex items-center justify-center space-x-1.5"
+              >
+                <span>Avaliar Atendimento com IA (NLP)</span>
+              </button>
+              <button
                 onClick={() => onNavigate('dashboard')}
                 className="w-full bg-pastel-sand text-stone-800 text-xs font-bold uppercase tracking-wider py-3 border border-stone-300 hover:bg-stone-200 transition"
               >

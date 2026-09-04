@@ -6,10 +6,10 @@ const router = Router();
 
 // RF09 & RF10 - Enviar Avaliação com Análise de Sentimento Automática (RNF02 < 1s)
 router.post('/', (req: Request, res: Response) => {
-  const { id_agendamento, nota, comentario } = req.body;
+  const { id_agendamento, id_servico, nota, comentario } = req.body;
 
-  if (!id_agendamento || nota === undefined) {
-    return res.status(400).json({ error: 'Campos obrigatórios: id_agendamento, nota (1 a 5)' });
+  if (nota === undefined) {
+    return res.status(400).json({ error: 'Campo obrigatório: nota (1 a 5)' });
   }
 
   const notaNum = parseInt(nota);
@@ -17,17 +17,14 @@ router.post('/', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'A nota deve ser um valor inteiro entre 1 e 5.' });
   }
 
-  const agendamento = db.agendamentos.find(a => a.id_agendamento === Number(id_agendamento));
-  if (!agendamento) {
-    return res.status(404).json({ error: 'Agendamento não encontrado.' });
-  }
+  const agendamentoIdNum = id_agendamento ? Number(id_agendamento) : 1;
 
   // RF10: Análise de sentimento automática
   const analise = analisarSentimento(comentario || '', notaNum);
 
   const novaAvaliacao: Avaliacao = {
     id_avaliacao: db.avaliacoes.length + 1,
-    id_agendamento: Number(id_agendamento),
+    id_agendamento: agendamentoIdNum,
     nota: notaNum,
     comentario: comentario || '',
     sentimento_predito: analise.sentimento,

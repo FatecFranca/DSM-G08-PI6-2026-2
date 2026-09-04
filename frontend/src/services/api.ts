@@ -1,4 +1,4 @@
-import { Service, Appointment, Slot, SentimentResponse, UserProfile } from '../types';
+import { Service, Appointment, Slot, SentimentResponse, UserProfile, Review } from '../types';
 
 const API_BASE = 'http://localhost:3000/api';
 
@@ -464,6 +464,46 @@ export const api = {
       atuais[index].status = status;
       saveStoredAppointments(atuais);
     }
+  },
+
+  // RF09: Enviar Avaliação (Vinculada a Serviço ou Agendamento)
+  async submitReview(review: {
+    id_agendamento?: number;
+    id_servico?: number;
+    servico_titulo?: string;
+    nota: number;
+    comentario: string;
+    sentimento_predito?: 'Positivo' | 'Negativo';
+  }): Promise<Review> {
+    const nova: Review = {
+      id_avaliacao: Date.now(),
+      id_agendamento: review.id_agendamento || 1,
+      nota: review.nota,
+      comentario: review.comentario,
+      sentimento_predito: review.sentimento_predito || (review.nota >= 3 ? 'Positivo' : 'Negativo'),
+      data_avaliacao: new Date().toISOString()
+    };
+
+    try {
+      await fetch(`${API_BASE}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_agendamento: review.id_agendamento || 1,
+          id_servico: review.id_servico,
+          servico_titulo: review.servico_titulo,
+          nota: review.nota,
+          comentario: review.comentario
+        })
+      });
+    } catch (_) {}
+
+    try {
+      const salvas = JSON.parse(localStorage.getItem('agendou_avaliacoes_v3') || '[]');
+      localStorage.setItem('agendou_avaliacoes_v3', JSON.stringify([nova, ...salvas]));
+    } catch (_) {}
+
+    return nova;
   },
 
   // RF10 & RNF02: Análise de Sentimento
