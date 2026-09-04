@@ -14,81 +14,72 @@ Para garantir legibilidade máxima e organização modular no GitHub, apresentam
 
 ---
 
-### 1.1 Visão Geral Consolidada do Sistema
+### 1.1 Visão Geral Consolidada do Sistema (Estrutura por Raias)
+
+O diagrama abaixo consolida todos os 12 casos de uso organizados em **raias funcionais independentes** por ator, eliminando cruzamento de linhas e garantindo leitura imediata:
 
 ```mermaid
-flowchart LR
+flowchart TD
     %% ==========================================
-    %% ATORES PRIMÁRIOS (CLIENTES)
+    %% 1. JORNADA DO CLIENTE (FLUXO SUPERIOR)
     %% ==========================================
-    subgraph Atores_Clientes ["👤 Atores Primários"]
-        C(["👤 Cliente"])
+    subgraph Raia_Cliente ["👤 JORNADA DO CLIENTE (AGENDAMENTO & AVALIAÇÃO)"]
+        direction LR
+        Cliente(["👤 Cliente"])
+        UC01_C(["UC01: Acessar Plataforma"])
+        UC05(["UC05: Consultar Horários Livres"])
+        UC06(["UC06: Solicitar Agendamento"])
+        UC07(["UC07: Validar Anti-Double Booking"]):::dashed
+        UC08_C(["UC08: Cancelar Agendamento"])
+        UC09(["UC09: Avaliar Atendimento"])
+
+        Cliente --> UC01_C
+        Cliente --> UC05
+        Cliente --> UC06
+        Cliente --> UC08_C
+        Cliente --> UC09
+        UC06 -.->|"<<include>>"| UC07
     end
 
     %% ==========================================
-    %% FRONTEIRA DO SISTEMA
+    %% 2. PAINEL DO PRESTADOR (FLUXO CENTRAL)
     %% ==========================================
-    subgraph Sistema ["🏢 Sistema de Agendamento Multiplataforma"]
-        
-        subgraph Mod_Agendamento ["📅 Núcleo de Agendamentos & Reserva"]
-            UC05(["UC05: Consultar Horários Disponíveis"])
-            UC06(["UC06: Solicitar Agendamento"])
-            UC07(["UC07: Validar Anti-Double Booking"]):::inc
-            UC08(["UC08: Gerenciar Status do Agendamento"])
-        end
+    subgraph Raia_Prestador ["🛠️ PAINEL DO PRESTADOR (CATÁLOGO & GESTÃO DA GRADE)"]
+        direction LR
+        Prestador(["🛠️ Prestador"])
+        UC01_P(["UC01: Acessar Painel"])
+        UC03(["UC03: Gerenciar Catálogo"])
+        UC04(["UC04: Configurar Expediente"])
+        UC08_P(["UC08: Confirmar Atendimentos"])
+        UC11(["UC11: Dashboard & Métricas"])
 
-        subgraph Mod_Avaliacao ["⭐ Avaliações & Inteligência Artificial"]
-            UC09(["UC09: Submeter Avaliação do Atendimento"])
-            UC10(["UC10: Classificar Sentimento NLP"]):::inc
-            UC11(["UC11: Visualizar Dashboard e Métricas"])
-        end
-
-        subgraph Mod_Negocio ["🛠️ Catálogo & Expediente"]
-            UC03(["UC03: Gerenciar Catálogo de Serviços"])
-            UC04(["UC04: Configurar Jornada e Horários"])
-        end
-
-        subgraph Mod_Acesso ["🔐 Acesso & Administração"]
-            UC01(["UC01: Autenticar e Gerenciar Perfil"])
-            UC12(["UC12: Administrar Plataforma"])
-        end
+        Prestador --> UC01_P
+        Prestador --> UC03
+        Prestador --> UC04
+        Prestador --> UC08_P
+        Prestador --> UC11
     end
 
     %% ==========================================
-    %% ATORES SECUNDÁRIOS / GESTÃO E SISTEMAS
+    %% 3. INTELIGÊNCIA & ADMINISTRAÇÃO (FLUXO INFERIOR)
     %% ==========================================
-    subgraph Atores_Gestao ["🏢 Gestão & Sistemas"]
-        P(["🛠️ Prestador de Serviços"])
-        A(["🛡️ Administrador"])
-        IA(["🤖 Pipeline de IA (NLP)"]):::ai
+    subgraph Raia_Suporte ["🤖 INTELIGÊNCIA ARTIFICIAL & ADMINISTRAÇÃO"]
+        direction LR
+        IA(["🤖 Motor de IA (NLP)"]):::ai
+        UC10(["UC10: Classificar Sentimento NLP"]):::ai
+        IA --- UC10
+
+        Admin(["🛡️ Administrador"])
+        UC12(["UC12: Administrar Plataforma"])
+        Admin --> UC12
     end
 
-    %% Relações do Cliente
-    C --> UC01
-    C --> UC05
-    C --> UC06
-    C --> UC08
-    C --> UC09
+    %% Integração direta e limpa entre a avaliação e o módulo de IA
+    UC09 ==>|"<<trigger>> Análise NLP"| UC10
 
-    %% Dependências Internas (Include e Trigger)
-    UC06 -.->|"<<include>>"| UC07
-    UC09 -.->|"<<trigger>>"| UC10
-    UC10 --- IA
-
-    %% Relações do Prestador
-    P --> UC01
-    P --> UC03
-    P --> UC04
-    P --> UC08
-    P --> UC11
-
-    %% Relações do Administrador
-    A --> UC01
-    A --> UC12
-
-    %% Definições de Estilo
+    %% Estilos Visuais
     classDef default fill:#ffffff,stroke:#2563eb,stroke-width:1.5px,color:#0f172a;
-    classDef inc fill:#f8fafc,stroke:#64748b,stroke-width:1.5px,stroke-dasharray: 4 4,color:#334155;
+    classDef dashed fill:#f8fafc,stroke:#64748b,stroke-width:1.5px,stroke-dasharray: 4 4,color:#334155;
     classDef ai fill:#faf5ff,stroke:#7c3aed,stroke-width:2px,color:#581c87;
 ```
 
