@@ -303,21 +303,39 @@ export const api = {
     saveStoredServices(atualizados);
   },
 
-  // RF05 & RF07: Consulta de Horários Livres e Ocupados
+  // RF05 & RF07: Consulta de Horários Livres e Ocupados (Por Serviço)
   async getAvailableSlots(
     providerId: number,
     serviceId: number,
     date: string,
-    duracaoMinutos: number = 45
+    duracaoMinutos: number = 45,
+    serviceTitle?: string
   ): Promise<{ slots: Slot[], tempoMs: number }> {
     const inicioTimer = performance.now();
     const agendamentos = await this.getAppointments(providerId);
 
-    const agendamentosNoDia = agendamentos.filter(a =>
-      a.id_prestador === providerId &&
-      a.status !== 'Cancelado' &&
-      a.data_hora_inicio.startsWith(date)
-    );
+    // Normalizar o título do serviço caso fornecido ou buscá-lo do catálogo
+    let tituloNormalizado = serviceTitle ? serviceTitle.toLowerCase().trim() : '';
+    if (!tituloNormalizado) {
+      const servico = getStoredServices().find(s => s.id_servico === serviceId);
+      if (servico) tituloNormalizado = servico.titulo.toLowerCase().trim();
+    }
+
+    // Filtra exclusivamente os agendamentos confirmados/ativos para ESTE serviço específico
+    // Se o serviço for recém-criado e não tiver agendamentos, todos os horários ficam 100% livres/vazios
+    const agendamentosNoDia = agendamentos.filter(a => {
+      if (a.status === 'Cancelado') return false;
+      if (!a.data_hora_inicio.startsWith(date)) return false;
+
+      const coincideId = a.id_servico === serviceId;
+      const coincideTitulo = Boolean(
+        tituloNormalizado &&
+        a.servico_titulo &&
+        a.servico_titulo.toLowerCase().trim() === tituloNormalizado
+      );
+
+      return coincideId || coincideTitulo;
+    });
 
     const slots: Slot[] = [];
     const inicioExpediente = 9 * 60; // 09:00

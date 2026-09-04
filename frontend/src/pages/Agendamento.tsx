@@ -30,7 +30,7 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
   const carregarSlots = useCallback(async (s: Service | null, data: string) => {
     if (!s) return;
     setLoadingSlots(true);
-    const res = await api.getAvailableSlots(1, s.id_servico, data, s.duracao_minutos);
+    const res = await api.getAvailableSlots(1, s.id_servico, data, s.duracao_minutos, s.titulo);
     setSlots(res.slots);
     setTempoCalculoMs(res.tempoMs);
 

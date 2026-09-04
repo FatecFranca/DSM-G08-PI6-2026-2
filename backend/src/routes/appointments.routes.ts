@@ -36,10 +36,10 @@ router.get('/available-slots', (req: Request, res: Response) => {
     });
   }
 
-  // Obter agendamentos existentes para o prestador na data
+  // Obter agendamentos existentes para o serviço específico na data
   const dataString = (date as string);
   const agendamentosExistentes = db.agendamentos.filter(a => 
-    a.id_prestador === pId &&
+    a.id_servico === sId &&
     a.status !== 'Cancelado' &&
     a.data_hora_inicio.startsWith(dataString)
   );
@@ -129,9 +129,9 @@ router.post('/', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Intervalo de datas e horários inválido.' });
   }
 
-  // RF07: Validação rigorosa de conflito de agenda (Anti-Double-Booking)
+  // RF07: Validação rigorosa de conflito de agenda (Anti-Double-Booking por serviço)
   const conflito = db.agendamentos.some(ag => {
-    if (ag.id_prestador !== Number(id_prestador) || ag.status === 'Cancelado') {
+    if (ag.id_servico !== Number(id_servico) || ag.status === 'Cancelado') {
       return false;
     }
     const agIni = new Date(ag.data_hora_inicio).getTime();
@@ -144,7 +144,7 @@ router.post('/', (req: Request, res: Response) => {
   if (conflito) {
     return res.status(409).json({
       error: 'Conflito de agendamento (Double-Booking detectado)',
-      message: 'O prestador já possui um compromisso ativo neste mesmo intervalo de horário. Por favor, escolha outro slot livre.'
+      message: 'Já existe um agendamento confirmado neste mesmo horário para este serviço. Por favor, escolha outro slot livre.'
     });
   }
 
