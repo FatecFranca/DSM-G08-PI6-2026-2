@@ -9,7 +9,7 @@ const SERVICOS_INICIAIS: Service[] = [
   { id_servico: 4, id_prestador: 1, titulo: 'Penteado & Finalização Matte', descricao: 'Lavagem especial, secagem e pomada modeladora.', duracao_minutos: 25, preco: 30.00, ativo: true }
 ];
 
-const AGENDAMENTOS_INICIAIS: Appointment[] = [
+const AGENDAMENTOS_PADRAO: Appointment[] = [
   {
     id_agendamento: 1,
     id_cliente: 2,
@@ -33,8 +33,8 @@ const AGENDAMENTOS_INICIAIS: Appointment[] = [
     cliente_telefone: '(11) 98111-2233',
     servico_titulo: 'Barba Terapia Completa',
     servico_preco: 40.00,
-    data_hora_inicio: '2026-09-04T09:00:00.000Z',
-    data_hora_fim: '2026-09-04T09:30:00.000Z',
+    data_hora_inicio: '2026-09-04T14:00:00.000Z',
+    data_hora_fim: '2026-09-04T14:30:00.000Z',
     status: 'Concluído'
   },
   {
@@ -46,8 +46,8 @@ const AGENDAMENTOS_INICIAIS: Appointment[] = [
     cliente_telefone: '(11) 97766-5544',
     servico_titulo: 'Combo Cabelo + Barba VIP',
     servico_preco: 80.00,
-    data_hora_inicio: '2026-09-04T14:00:00.000Z',
-    data_hora_fim: '2026-09-04T15:00:00.000Z',
+    data_hora_inicio: '2026-09-04T16:00:00.000Z',
+    data_hora_fim: '2026-09-04T17:00:00.000Z',
     status: 'Confirmado'
   }
 ];
@@ -68,19 +68,36 @@ function saveStoredServices(services: Service[]) {
 
 function getStoredAppointments(): Appointment[] {
   try {
-    const data = localStorage.getItem('agendou_agendamentos');
+    const data = localStorage.getItem('agendou_agendamentos_v2');
     if (data) return JSON.parse(data);
   } catch (_) {}
-  return AGENDAMENTOS_INICIAIS;
+  return AGENDAMENTOS_PADRAO;
 }
 
 function saveStoredAppointments(appointments: Appointment[]) {
   try {
-    localStorage.setItem('agendou_agendamentos', JSON.stringify(appointments));
+    localStorage.setItem('agendou_agendamentos_v2', JSON.stringify(appointments));
   } catch (_) {}
 }
 
 export const api = {
+  // Funções utilitárias de horário para evitar bugs de fuso horário
+  extrairHora(isoString: string): string {
+    if (!isoString) return '';
+    const partes = isoString.split('T');
+    if (partes.length > 1) {
+      return partes[1].substring(0, 5);
+    }
+    return isoString;
+  },
+
+  extrairData(isoString: string): string {
+    if (!isoString) return '';
+    const dataPart = isoString.split('T')[0];
+    const [ano, mes, dia] = dataPart.split('-');
+    return `${dia}/${mes}/${ano}`;
+  },
+
   // RF03: Serviços
   async getServices(providerId: number = 1): Promise<Service[]> {
     try {
@@ -128,7 +145,7 @@ export const api = {
     return novoServico;
   },
 
-  // RF05 & RF07: Consulta de Horários Livres e Ocupados (Anti-Double-Booking)
+  // RF05 & RF07: Consulta de Horários Livres e Ocupados (100% Sincronizado com o Painel)
   async getAvailableSlots(
     providerId: number,
     serviceId: number,
@@ -137,36 +154,21 @@ export const api = {
   ): Promise<{ slots: Slot[], tempoMs: number }> {
     const inicioTimer = performance.now();
 
-    // Buscar agendamentos existentes locais e remotos
-    let agendamentosData = getStoredAppointments();
+    // Obter todos os agendamentos registrados
+    const agendamentos = await this.getAppointments(providerId);
 
-    try {
-      const res = await fetch(`${API_BASE}/appointments?providerId=${providerId}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.appointments && data.appointments.length > 0) {
-          // Mesclar garantindo unicidade por id_agendamento
-          const mapa = new Map<number, Appointment>();
-          data.appointments.forEach((a: Appointment) => mapa.set(a.id_agendamento, a));
-          agendamentosData.forEach(a => mapa.set(a.id_agendamento, a));
-          agendamentosData = Array.from(mapa.values());
-        }
-      }
-    } catch (_) {}
-
-    // Filtrar agendamentos ativos nesta data
-    const agendamentosNoDia = agendamentosData.filter(a =>
+    // Filtrar agendamentos ativos na data especificada
+    const agendamentosNoDia = agendamentos.filter(a =>
       a.id_prestador === providerId &&
       a.status !== 'Cancelado' &&
       a.data_hora_inicio.startsWith(date)
     );
 
-    // Gerar slots da jornada (09:00 às 19:00 com pausa das 12:00 às 13:00)
     const slots: Slot[] = [];
     const inicioExpediente = 9 * 60; // 09:00
-    const fimExpediente = 19 * 60; // 19:00
-    const almocoInicio = 12 * 60;
-    const almocoFim = 13 * 60;
+    const fimExpediente = 19 * 60;   // 19:00
+    const almocoInicio = 12 * 60;    // 12:00
+    const almocoFim = 13 * 60;       // 13:00
 
     let minAtual = inicioExpediente;
     while (minAtual + duracaoMinutos <= fimExpediente) {
@@ -180,10 +182,11 @@ export const api = {
       const emAlmoco = slotIni < almocoFim && slotFim > almocoInicio;
 
       if (!emAlmoco) {
-        // Verificar colisão com agendamentos existentes (RF07)
+        // Formatar no formato UTC padronizado
         const slotIsoIni = `${date}T${horaIniStr}:00.000Z`;
         const slotIsoFim = `${date}T${horaFimStr}:00.000Z`;
 
+        // Colisão com compromissos reais do prestador
         const conflito = agendamentosNoDia.some(ag => {
           return (slotIsoIni < ag.data_hora_fim && slotIsoFim > ag.data_hora_inicio);
         });
@@ -195,7 +198,7 @@ export const api = {
         });
       }
 
-      minAtual += 30; // Passo de 30 minutos entre slots
+      minAtual += 30; // Intervalo entre horários
     }
 
     const fimTimer = performance.now();
@@ -246,7 +249,7 @@ export const api = {
       });
     } catch (_) {}
 
-    // 2. Persistir localmente para reatividade imediata no front-end
+    // 2. Persistir localmente para visibilidade imediata no Dashboard e Agendamento
     const atuais = getStoredAppointments();
     const atualizados = [novoAgendamento, ...atuais];
     saveStoredAppointments(atualizados);
@@ -275,6 +278,24 @@ export const api = {
     } catch (_) {}
 
     return agendamentos;
+  },
+
+  // RF08: Atualizar Status do Agendamento (Concluir, Cancelar, Confirmar)
+  async updateAppointmentStatus(id: number, status: Appointment['status']): Promise<void> {
+    try {
+      await fetch(`${API_BASE}/appointments/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+    } catch (_) {}
+
+    const atuais = getStoredAppointments();
+    const index = atuais.findIndex(a => a.id_agendamento === id);
+    if (index !== -1) {
+      atuais[index].status = status;
+      saveStoredAppointments(atuais);
+    }
   },
 
   // RF10 & RNF02: Análise de Sentimento

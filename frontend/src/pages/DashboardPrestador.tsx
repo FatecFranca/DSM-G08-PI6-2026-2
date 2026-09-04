@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Appointment, Service } from '../types';
-import { Users, DollarSign, Star, Brain, Check, X, Eye, Plus, Scissors, Clock } from 'lucide-react';
+import { Users, DollarSign, Star, Brain, Check, X, Eye, Plus, Scissors, Clock, Calendar } from 'lucide-react';
 import { ModalNovoServico } from '../components/ModalNovoServico';
 
 interface DashboardProps {
@@ -12,29 +12,39 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
   const [agendamentos, setAgendamentos] = useState<Appointment[]>([]);
   const [servicos, setServicos] = useState<Service[]>([]);
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const [filtroData, setFiltroData] = useState<string>('2026-09-04');
   const [modalAberto, setModalAberto] = useState<boolean>(false);
   const [mensagemSucesso, setMensagemSucesso] = useState<string>('');
 
-  useEffect(() => {
+  const carregarDados = () => {
     api.getAppointments(1).then(data => setAgendamentos(data));
     api.getServices(1).then(data => setServicos(data));
+  };
+
+  useEffect(() => {
+    carregarDados();
   }, []);
 
-  const alterarStatus = (id: number, novoStatus: 'Confirmado' | 'Cancelado' | 'Concluído') => {
+  const alterarStatus = async (id: number, novoStatus: 'Confirmado' | 'Cancelado' | 'Concluído') => {
+    await api.updateAppointmentStatus(id, novoStatus);
     setAgendamentos(prev =>
       prev.map(a => (a.id_agendamento === id ? { ...a, status: novoStatus } : a))
     );
+    setMensagemSucesso(`Status atualizado para "${novoStatus}".`);
+    setTimeout(() => setMensagemSucesso(''), 3000);
   };
 
   const handleServiceCreated = (novo: Service) => {
     setServicos(prev => [novo, ...prev]);
-    setMensagemSucesso(`Serviço "${novo.titulo}" cadastrado e liberado para agendamentos!`);
+    setMensagemSucesso(`Serviço "${novo.titulo}" cadastrado com sucesso!`);
     setTimeout(() => setMensagemSucesso(''), 4000);
   };
 
+  // Filtragem combinada de status e data
   const listaFiltrada = agendamentos.filter(a => {
-    if (filtroStatus === 'todos') return true;
-    return a.status === filtroStatus;
+    const atendeStatus = filtroStatus === 'todos' || a.status === filtroStatus;
+    const atendeData = !filtroData || a.data_hora_inicio.startsWith(filtroData);
+    return atendeStatus && atendeData;
   });
 
   const getStatusBadge = (status: Appointment['status']) => {
@@ -60,7 +70,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
         <div>
           <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Módulo Administrativo</span>
           <h1 className="text-3xl font-normal text-stone-900 tracking-tight mt-1">Painel do Prestador (RF11)</h1>
-          <p className="text-xs text-stone-500 font-light mt-1">Gestão de catálogo, horários, métricas financeiras e índices de IA.</p>
+          <p className="text-xs text-stone-500 font-light mt-1">Visão sincronizada com o motor de agendamentos e horários livres.</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -80,7 +90,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
             onClick={() => onNavigate('agendamento')}
             className="underline uppercase tracking-wider text-stone-900 font-extrabold ml-4"
           >
-            Ver no Agendamento →
+            Ver Horários Livres →
           </button>
         </div>
       )}
@@ -90,11 +100,13 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
         
         <div className="bg-pastel-cream p-6 border border-stone-300 space-y-2">
           <div className="flex justify-between items-center text-stone-400">
-            <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-stone-500">Agendados Hoje</span>
+            <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-stone-500">Agendamentos Totais</span>
             <Users className="w-4 h-4 text-stone-600" />
           </div>
           <h3 className="text-3xl font-mono font-light text-stone-900">{agendamentos.length}</h3>
-          <p className="text-[11px] font-mono text-pastel-sage-dark font-semibold">Data: 04/09/2026</p>
+          <p className="text-[11px] font-mono text-pastel-sage-dark font-semibold">
+            {listaFiltrada.length} na data filtrada
+          </p>
         </div>
 
         <div className="bg-pastel-cream p-6 border border-stone-300 space-y-2">
@@ -103,9 +115,9 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
             <DollarSign className="w-4 h-4 text-stone-600" />
           </div>
           <h3 className="text-3xl font-mono font-light text-stone-900">
-            R$ {agendamentos.reduce((acc, a) => acc + a.servico_preco, 0).toFixed(2).replace('.', ',')}
+            R$ {agendamentos.reduce((acc, a) => acc + (a.status !== 'Cancelado' ? a.servico_preco : 0), 0).toFixed(2).replace('.', ',')}
           </h3>
-          <p className="text-[11px] font-mono text-stone-500">Receita total da data</p>
+          <p className="text-[11px] font-mono text-stone-500">Receita de atendimentos ativos</p>
         </div>
 
         <div className="bg-pastel-cream p-6 border border-stone-300 space-y-2">
@@ -166,46 +178,70 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
       {/* Tabela de Agendamentos */}
       <div className="bg-white border border-stone-300 space-y-4">
         
-        {/* Filtros e Legenda Semafórica (RNF06) */}
-        <div className="p-6 border-b border-stone-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Filtros de Data e Status */}
+        <div className="p-6 border-b border-stone-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h2 className="text-base font-bold uppercase tracking-wider text-stone-900">Grade de Agendamentos</h2>
-            <p className="text-xs text-stone-500 font-mono mt-0.5">Indicadores semafóricos pasteis para identificação ágil.</p>
+            <p className="text-xs text-stone-500 font-mono mt-0.5">
+              Horários exibidos exatamente conforme ocupam os slots na grade do estabelecimento.
+            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
-            <button
-              onClick={() => setFiltroStatus('todos')}
-              className={`px-3 py-1.5 border uppercase tracking-wider text-[11px] ${
-                filtroStatus === 'todos' ? 'bg-stone-900 text-white border-stone-900 font-bold' : 'bg-white text-stone-600 border-stone-300'
-              }`}
-            >
-              Todos
-            </button>
-            <button
-              onClick={() => setFiltroStatus('Confirmado')}
-              className={`px-3 py-1.5 border uppercase tracking-wider text-[11px] ${
-                filtroStatus === 'Confirmado' ? 'bg-pastel-sage text-pastel-sage-dark border-pastel-sage-dark font-bold' : 'bg-white text-stone-600 border-stone-300'
-              }`}
-            >
-              Confirmados
-            </button>
-            <button
-              onClick={() => setFiltroStatus('Pendente')}
-              className={`px-3 py-1.5 border uppercase tracking-wider text-[11px] ${
-                filtroStatus === 'Pendente' ? 'bg-pastel-amber text-pastel-amber-dark border-pastel-amber-dark font-bold' : 'bg-white text-stone-600 border-stone-300'
-              }`}
-            >
-              Pendentes
-            </button>
-            <button
-              onClick={() => setFiltroStatus('Concluído')}
-              className={`px-3 py-1.5 border uppercase tracking-wider text-[11px] ${
-                filtroStatus === 'Concluído' ? 'bg-pastel-blue text-pastel-blue-dark border-pastel-blue-dark font-bold' : 'bg-white text-stone-600 border-stone-300'
-              }`}
-            >
-              Concluídos
-            </button>
+          <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
+            {/* Filtro por Data */}
+            <div className="flex items-center space-x-2 border border-stone-300 px-3 py-1.5 bg-pastel-cream">
+              <Calendar className="w-3.5 h-3.5 text-stone-500" />
+              <input
+                type="date"
+                value={filtroData}
+                onChange={e => setFiltroData(e.target.value)}
+                className="bg-transparent text-xs font-bold text-stone-800 focus:outline-none"
+              />
+              {filtroData && (
+                <button
+                  onClick={() => setFiltroData('')}
+                  className="text-stone-400 hover:text-stone-700 text-[10px] uppercase font-bold ml-1"
+                >
+                  Ver Todos
+                </button>
+              )}
+            </div>
+
+            {/* Filtros de Status */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setFiltroStatus('todos')}
+                className={`px-2.5 py-1.5 border uppercase tracking-wider text-[11px] ${
+                  filtroStatus === 'todos' ? 'bg-stone-900 text-white border-stone-900 font-bold' : 'bg-white text-stone-600 border-stone-300'
+                }`}
+              >
+                Todos
+              </button>
+              <button
+                onClick={() => setFiltroStatus('Confirmado')}
+                className={`px-2.5 py-1.5 border uppercase tracking-wider text-[11px] ${
+                  filtroStatus === 'Confirmado' ? 'bg-pastel-sage text-pastel-sage-dark border-pastel-sage-dark font-bold' : 'bg-white text-stone-600 border-stone-300'
+                }`}
+              >
+                Confirmados
+              </button>
+              <button
+                onClick={() => setFiltroStatus('Concluído')}
+                className={`px-2.5 py-1.5 border uppercase tracking-wider text-[11px] ${
+                  filtroStatus === 'Concluído' ? 'bg-pastel-blue text-pastel-blue-dark border-pastel-blue-dark font-bold' : 'bg-white text-stone-600 border-stone-300'
+                }`}
+              >
+                Concluídos
+              </button>
+              <button
+                onClick={() => setFiltroStatus('Cancelado')}
+                className={`px-2.5 py-1.5 border uppercase tracking-wider text-[11px] ${
+                  filtroStatus === 'Cancelado' ? 'bg-pastel-peach text-pastel-peach-dark border-pastel-peach-dark font-bold' : 'bg-white text-stone-600 border-stone-300'
+                }`}
+              >
+                Cancelados
+              </button>
+            </div>
           </div>
         </div>
 
@@ -214,6 +250,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-pastel-cream border-b border-stone-300 text-[11px] font-mono font-bold uppercase tracking-wider text-stone-500">
+                <th className="py-3.5 px-6">Data</th>
                 <th className="py-3.5 px-6">Horário</th>
                 <th className="py-3.5 px-6">Cliente</th>
                 <th className="py-3.5 px-6">Serviço</th>
@@ -223,53 +260,64 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-200 text-xs">
-              {listaFiltrada.map(item => (
-                <tr key={item.id_agendamento} className="hover:bg-pastel-cream/50 transition">
-                  <td className="py-4 px-6 font-mono font-bold text-stone-900">
-                    {new Date(item.data_hora_inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -{' '}
-                    {new Date(item.data_hora_fim).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </td>
-                  <td className="py-4 px-6">
-                    <p className="font-bold text-stone-900">{item.cliente_nome}</p>
-                    <p className="text-[11px] font-mono text-stone-400">{item.cliente_telefone}</p>
-                  </td>
-                  <td className="py-4 px-6 text-stone-700">{item.servico_titulo}</td>
-                  <td className="py-4 px-6 font-mono font-bold text-stone-900">
-                    R$ {item.servico_preco.toFixed(2).replace('.', ',')}
-                  </td>
-                  <td className="py-4 px-6">
-                    <span className={`inline-block px-2.5 py-1 text-[10px] uppercase tracking-wider border font-mono ${getStatusBadge(item.status)}`}>
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 text-right space-x-3 font-mono text-xs">
-                    {item.status !== 'Concluído' && (
-                      <button
-                        onClick={() => alterarStatus(item.id_agendamento, 'Concluído')}
-                        className="text-stone-900 hover:text-pastel-sage-dark font-bold underline"
-                      >
-                        Concluir
-                      </button>
-                    )}
-                    {item.status !== 'Cancelado' && item.status !== 'Concluído' && (
-                      <button
-                        onClick={() => alterarStatus(item.id_agendamento, 'Cancelado')}
-                        className="text-stone-500 hover:text-stone-800 underline"
-                      >
-                        Cancelar
-                      </button>
-                    )}
-                    {item.status === 'Concluído' && (
-                      <button
-                        onClick={() => onNavigate('avaliacao')}
-                        className="text-stone-900 hover:underline font-bold"
-                      >
-                        Avaliação
-                      </button>
-                    )}
+              {listaFiltrada.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-xs font-mono text-stone-400">
+                    Nenhum agendamento encontrado para os filtros selecionados.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                listaFiltrada.map(item => (
+                  <tr key={item.id_agendamento} className="hover:bg-pastel-cream/50 transition">
+                    <td className="py-4 px-6 font-mono text-stone-600">
+                      {api.extrairData(item.data_hora_inicio)}
+                    </td>
+                    <td className="py-4 px-6 font-mono font-bold text-stone-900">
+                      {api.extrairHora(item.data_hora_inicio)} - {api.extrairHora(item.data_hora_fim)}
+                    </td>
+                    <td className="py-4 px-6">
+                      <p className="font-bold text-stone-900">{item.cliente_nome}</p>
+                      <p className="text-[11px] font-mono text-stone-400">{item.cliente_telefone}</p>
+                    </td>
+                    <td className="py-4 px-6 text-stone-700">{item.servico_titulo}</td>
+                    <td className="py-4 px-6 font-mono font-bold text-stone-900">
+                      R$ {item.servico_preco.toFixed(2).replace('.', ',')}
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className={`inline-block px-2.5 py-1 text-[10px] uppercase tracking-wider border font-mono ${getStatusBadge(item.status)}`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-right space-x-3 font-mono text-xs">
+                      {item.status !== 'Concluído' && (
+                        <button
+                          onClick={() => alterarStatus(item.id_agendamento, 'Concluído')}
+                          className="text-stone-900 hover:text-pastel-sage-dark font-bold underline"
+                        >
+                          Concluir
+                        </button>
+                      )}
+                      {item.status !== 'Cancelado' && item.status !== 'Concluído' && (
+                        <button
+                          onClick={() => alterarStatus(item.id_agendamento, 'Cancelado')}
+                          className="text-stone-500 hover:text-stone-800 underline"
+                          title="Cancelar agendamento libera o horário na grade"
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                      {item.status === 'Concluído' && (
+                        <button
+                          onClick={() => onNavigate('avaliacao')}
+                          className="text-stone-900 hover:underline font-bold"
+                        >
+                          Avaliação
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
