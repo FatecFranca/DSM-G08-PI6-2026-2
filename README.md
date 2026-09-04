@@ -38,48 +38,6 @@ O objetivo central desta primeira entrega consiste na concepção integral do es
 
 ---
 
-## 🏗️ Estrutura do Repositório
-
-```text
-├── docs/                                   # Documentação técnica e modelagem
-│   ├── 01_escopo_e_requisitos.md           # Especificação detalhada de RFs e RNFs
-│   ├── 02_modelagem_arquitetura.md         # Diagramas UML, Arquitetura e Sequência
-│   ├── 03_banco_de_dados_conceitual_e_logico.md # Modelo ER, Dicionário e Normalização 3FN
-│   ├── 04_computacao_em_nuvem_II.md        # Topologia AWS, ECS Fargate, S3 e RDS
-│   ├── 05_mineracao_de_dados.md            # Metodologia CRISP-DM e NLP de Sentimentos
-│   └── schema.sql                          # DDL Executável com Constraints e Índices
-│
-├── backend/                                # API RESTful em Node.js & TypeScript
-│   ├── src/
-│   │   ├── routes/                         # Roteadores desacoplados da API
-│   │   │   ├── auth.routes.ts              # Login e registro de clientes/prestadores (RF01)
-│   │   │   ├── services.routes.ts          # Catálogo e gestão de serviços (RF03)
-│   │   │   ├── schedule.routes.ts          # Configuração de jornada de trabalho (RF04)
-│   │   │   ├── appointments.routes.ts      # Cálculo de slots livres e anti-conflito (RF05-RF08)
-│   │   │   ├── reviews.routes.ts           # Avaliações pós-atendimento (RF09, RF11)
-│   │   │   └── ai.routes.ts                # Endpoint do modelo de sentimento NLP (RF10, RNF02)
-│   │   ├── database/                       # Simulação de persistência e seed para testes
-│   │   ├── middlewares/                    # Autenticação JWT e tratamento global de erros
-│   │   ├── services/                       # Algoritmo de NLP e cálculo de horários
-│   │   ├── app.ts                          # Configuração Express e CORS
-│   │   └── server.ts                       # Ponto de entrada do servidor HTTP
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── frontend/                               # Protótipo estático navegável (HTML5 + Tailwind)
-│   ├── index.html                          # Landing page institucional da plataforma
-│   ├── login.html                          # Login e Cadastro (Cliente vs Prestador)
-│   ├── agendamento.html                    # Seleção de serviço, data e slots calculados
-│   ├── dashboard-prestador.html            # Gestão da agenda, métricas e cores semafóricas (RNF06)
-│   └── avaliacao.html                      # Avaliação com estrelas e IA de sentimento (RNF02)
-│
-├── data-mining/                            # Disciplina-satélite de Mineração de Dados
-│   ├── dataset_avaliacoes_exemplo.csv      # Dataset balanceado de avaliações em português
-│   └── analise_sentimento.py               # Script de treino e validação (TF-IDF, Naive Bayes)
-│
-├── .gitignore                              # Regras de exclusão Git (Node, Python, Logs)
-└── README.md                               # Relatório executivo da 1ª Sprint
-```
 
 ---
 
