@@ -155,7 +155,7 @@ As telas foram desenvolvidas com **HTML5 semântico** e **Tailwind CSS via CDN**
 Para associar esta pasta local ao repositório remoto oficial do grupo no GitHub:
 
 ```bash
-git remote add origin https://github.com/SEU-GRUPO/sistema-agendamento-pi6.git
+git remote add origin https://github.com/FatecFranca/DSM-G08-PI6-2026-2.git
 git branch -M main
 git push -u origin main
 ```
