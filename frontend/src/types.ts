@@ -1,3 +1,13 @@
+export type UserRole = 'Cliente' | 'Prestador' | 'Admin';
+
+export interface UserProfile {
+  id_usuario: number;
+  nome: string;
+  email: string;
+  tipo_perfil: UserRole;
+  nome_negocio?: string;
+}
+
 export interface Service {
   id_servico: number;
   id_prestador: number;

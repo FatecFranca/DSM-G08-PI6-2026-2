@@ -1,6 +1,29 @@
-import { Service, Appointment, Slot, SentimentResponse } from '../types';
+import { Service, Appointment, Slot, SentimentResponse, UserProfile } from '../types';
 
 const API_BASE = 'http://localhost:3000/api';
+
+export const PERFIS_DEMO: Record<string, UserProfile> = {
+  admin: {
+    id_usuario: 99,
+    nome: 'Hugo Rodrigues',
+    email: 'admin@agendou.com',
+    tipo_perfil: 'Admin',
+    nome_negocio: 'Administração Geral do Sistema'
+  },
+  prestador: {
+    id_usuario: 1,
+    nome: 'Carlos Barbearia VIP',
+    email: 'prestador@exemplo.com',
+    tipo_perfil: 'Prestador',
+    nome_negocio: 'Barbearia VIP Vintage'
+  },
+  cliente: {
+    id_usuario: 2,
+    nome: 'Mariana Silva',
+    email: 'cliente@exemplo.com',
+    tipo_perfil: 'Cliente'
+  }
+};
 
 const SERVICOS_INICIAIS: Service[] = [
   { id_servico: 1, id_prestador: 1, titulo: 'Corte de Cabelo Degradê', descricao: 'Corte moderno com acabamento na navalha e lavagem especial.', duracao_minutos: 45, preco: 50.00, ativo: true },
@@ -54,7 +77,7 @@ const AGENDAMENTOS_PADRAO: Appointment[] = [
 
 function getStoredServices(): Service[] {
   try {
-    const data = localStorage.getItem('agendou_servicos');
+    const data = localStorage.getItem('agendou_servicos_v3');
     if (data) return JSON.parse(data);
   } catch (_) {}
   return SERVICOS_INICIAIS;
@@ -62,13 +85,13 @@ function getStoredServices(): Service[] {
 
 function saveStoredServices(services: Service[]) {
   try {
-    localStorage.setItem('agendou_servicos', JSON.stringify(services));
+    localStorage.setItem('agendou_servicos_v3', JSON.stringify(services));
   } catch (_) {}
 }
 
 function getStoredAppointments(): Appointment[] {
   try {
-    const data = localStorage.getItem('agendou_agendamentos_v2');
+    const data = localStorage.getItem('agendou_agendamentos_v3');
     if (data) return JSON.parse(data);
   } catch (_) {}
   return AGENDAMENTOS_PADRAO;
@@ -76,12 +99,28 @@ function getStoredAppointments(): Appointment[] {
 
 function saveStoredAppointments(appointments: Appointment[]) {
   try {
-    localStorage.setItem('agendou_agendamentos_v2', JSON.stringify(appointments));
+    localStorage.setItem('agendou_agendamentos_v3', JSON.stringify(appointments));
   } catch (_) {}
 }
 
 export const api = {
-  // Funções utilitárias de horário para evitar bugs de fuso horário
+  // Gestão de Sessão do Usuário (Admin, Prestador, Cliente)
+  getCurrentUser(): UserProfile {
+    try {
+      const data = localStorage.getItem('agendou_user_profile');
+      if (data) return JSON.parse(data);
+    } catch (_) {}
+    return PERFIS_DEMO.admin; // Padrão: Admin (Hugo Rodrigues)
+  },
+
+  setCurrentUser(user: UserProfile): void {
+    try {
+      localStorage.setItem('agendou_user_profile', JSON.stringify(user));
+      window.dispatchEvent(new Event('agendou_auth_changed'));
+    } catch (_) {}
+  },
+
+  // Funções utilitárias de horário
   extrairHora(isoString: string): string {
     if (!isoString) return '';
     const partes = isoString.split('T');
@@ -98,21 +137,26 @@ export const api = {
     return `${dia}/${mes}/${ano}`;
   },
 
-  // RF03: Serviços
-  async getServices(providerId: number = 1): Promise<Service[]> {
+  // RF03: Serviços (Listar)
+  async getServices(providerId?: number): Promise<Service[]> {
+    const locais = getStoredServices().filter(s => s.ativo);
     try {
-      const res = await fetch(`${API_BASE}/services?providerId=${providerId}`);
+      const url = providerId ? `${API_BASE}/services?providerId=${providerId}` : `${API_BASE}/services`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         if (data.services && data.services.length > 0) {
-          const local = getStoredServices().filter(s => s.id_servico > 4);
-          return [...data.services, ...local];
+          const mapa = new Map<number, Service>();
+          data.services.forEach((s: Service) => { if (s.ativo) mapa.set(s.id_servico, s); });
+          locais.forEach(s => { if (s.ativo) mapa.set(s.id_servico, s); });
+          return Array.from(mapa.values());
         }
       }
     } catch (_) {}
-    return getStoredServices();
+    return locais;
   },
 
+  // RF03: Cadastrar Novo Serviço
   async createService(servico: {
     id_prestador?: number;
     titulo: string;
@@ -120,9 +164,10 @@ export const api = {
     duracao_minutos: number;
     preco: number;
   }): Promise<Service> {
+    const user = this.getCurrentUser();
     const novoServico: Service = {
       id_servico: Date.now(),
-      id_prestador: servico.id_prestador || 1,
+      id_prestador: servico.id_prestador || user.id_usuario,
       titulo: servico.titulo,
       descricao: servico.descricao || '',
       duracao_minutos: Number(servico.duracao_minutos),
@@ -145,7 +190,52 @@ export const api = {
     return novoServico;
   },
 
-  // RF05 & RF07: Consulta de Horários Livres e Ocupados (100% Sincronizado com o Painel)
+  // RF03: Editar Serviço (Disponível para Criador ou Admin)
+  async updateService(id: number, dados: {
+    titulo: string;
+    descricao: string;
+    duracao_minutos: number;
+    preco: number;
+  }): Promise<Service> {
+    try {
+      await fetch(`${API_BASE}/services/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+      });
+    } catch (_) {}
+
+    const atuais = getStoredServices();
+    const index = atuais.findIndex(s => s.id_servico === id);
+    if (index !== -1) {
+      atuais[index] = {
+        ...atuais[index],
+        titulo: dados.titulo,
+        descricao: dados.descricao,
+        duracao_minutos: Number(dados.duracao_minutos),
+        preco: Number(dados.preco)
+      };
+      saveStoredServices(atuais);
+      return atuais[index];
+    }
+
+    throw new Error('Serviço não encontrado');
+  },
+
+  // RF03: Excluir / Desativar Serviço (Disponível para Criador ou Admin)
+  async deleteService(id: number): Promise<void> {
+    try {
+      await fetch(`${API_BASE}/services/${id}`, {
+        method: 'DELETE'
+      });
+    } catch (_) {}
+
+    const atuais = getStoredServices();
+    const atualizados = atuais.filter(s => s.id_servico !== id);
+    saveStoredServices(atualizados);
+  },
+
+  // RF05 & RF07: Consulta de Horários Livres e Ocupados
   async getAvailableSlots(
     providerId: number,
     serviceId: number,
@@ -153,11 +243,8 @@ export const api = {
     duracaoMinutos: number = 45
   ): Promise<{ slots: Slot[], tempoMs: number }> {
     const inicioTimer = performance.now();
-
-    // Obter todos os agendamentos registrados
     const agendamentos = await this.getAppointments(providerId);
 
-    // Filtrar agendamentos ativos na data especificada
     const agendamentosNoDia = agendamentos.filter(a =>
       a.id_prestador === providerId &&
       a.status !== 'Cancelado' &&
@@ -178,15 +265,12 @@ export const api = {
       const horaIniStr = `${String(Math.floor(slotIni / 60)).padStart(2, '0')}:${String(slotIni % 60).padStart(2, '0')}`;
       const horaFimStr = `${String(Math.floor(slotFim / 60)).padStart(2, '0')}:${String(slotFim % 60).padStart(2, '0')}`;
 
-      // Intervalo de almoço
       const emAlmoco = slotIni < almocoFim && slotFim > almocoInicio;
 
       if (!emAlmoco) {
-        // Formatar no formato UTC padronizado
         const slotIsoIni = `${date}T${horaIniStr}:00.000Z`;
         const slotIsoFim = `${date}T${horaFimStr}:00.000Z`;
 
-        // Colisão com compromissos reais do prestador
         const conflito = agendamentosNoDia.some(ag => {
           return (slotIsoIni < ag.data_hora_fim && slotIsoFim > ag.data_hora_inicio);
         });
@@ -198,7 +282,7 @@ export const api = {
         });
       }
 
-      minAtual += 30; // Intervalo entre horários
+      minAtual += 30;
     }
 
     const fimTimer = performance.now();
@@ -207,7 +291,7 @@ export const api = {
     return { slots, tempoMs };
   },
 
-  // RF06 & RF07: Criar Agendamento com Prevenção de Double-Booking
+  // RF06 & RF07: Criar Agendamento
   async createAppointment(data: {
     id_cliente: number;
     id_prestador: number;
@@ -218,12 +302,13 @@ export const api = {
     data_hora_fim: string;
     observacoes?: string;
   }) {
+    const user = this.getCurrentUser();
     const novoAgendamento: Appointment = {
       id_agendamento: Date.now(),
       id_cliente: data.id_cliente,
       id_prestador: data.id_prestador,
       id_servico: data.id_servico,
-      cliente_nome: 'Mariana Silva (Você)',
+      cliente_nome: `${user.nome} (${user.tipo_perfil})`,
       cliente_telefone: '(11) 91234-5678',
       servico_titulo: data.servico_titulo || 'Serviço Agendado',
       servico_preco: data.servico_preco || 50.0,
@@ -233,7 +318,6 @@ export const api = {
       observacoes: data.observacoes || ''
     };
 
-    // 1. Tentar salvar no servidor Node.js
     try {
       await fetch(`${API_BASE}/appointments`, {
         method: 'POST',
@@ -249,7 +333,6 @@ export const api = {
       });
     } catch (_) {}
 
-    // 2. Persistir localmente para visibilidade imediata no Dashboard e Agendamento
     const atuais = getStoredAppointments();
     const atualizados = [novoAgendamento, ...atuais];
     saveStoredAppointments(atualizados);
@@ -280,7 +363,6 @@ export const api = {
     return agendamentos;
   },
 
-  // RF08: Atualizar Status do Agendamento (Concluir, Cancelar, Confirmar)
   async updateAppointmentStatus(id: number, status: Appointment['status']): Promise<void> {
     try {
       await fetch(`${API_BASE}/appointments/${id}/status`, {

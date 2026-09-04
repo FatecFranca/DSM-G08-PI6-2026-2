@@ -1,28 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Appointment, Service } from '../types';
-import { Users, DollarSign, Star, Brain, Check, X, Eye, Plus, Scissors, Clock, Calendar } from 'lucide-react';
+import { Appointment, Service, UserProfile } from '../types';
+import { Users, DollarSign, Star, Brain, Check, X, Eye, Plus, Scissors, Clock, Calendar, Edit3, Trash2, ShieldAlert } from 'lucide-react';
 import { ModalNovoServico } from '../components/ModalNovoServico';
+import { ModalEditarServico } from '../components/ModalEditarServico';
 
 interface DashboardProps {
   onNavigate: (page: string) => void;
 }
 
 export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => {
+  const [usuario, setUsuario] = useState<UserProfile>(api.getCurrentUser());
   const [agendamentos, setAgendamentos] = useState<Appointment[]>([]);
   const [servicos, setServicos] = useState<Service[]>([]);
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [filtroData, setFiltroData] = useState<string>('2026-09-04');
-  const [modalAberto, setModalAberto] = useState<boolean>(false);
+  
+  // Modais
+  const [modalNovoAberto, setModalNovoAberto] = useState<boolean>(false);
+  const [modalEditarAberto, setModalEditarAberto] = useState<boolean>(false);
+  const [servicoEmEdicao, setServicoEmEdicao] = useState<Service | null>(null);
+
   const [mensagemSucesso, setMensagemSucesso] = useState<string>('');
 
   const carregarDados = () => {
     api.getAppointments(1).then(data => setAgendamentos(data));
-    api.getServices(1).then(data => setServicos(data));
+    api.getServices().then(data => setServicos(data));
+    setUsuario(api.getCurrentUser());
   };
 
   useEffect(() => {
     carregarDados();
+    const handleAuthChange = () => setUsuario(api.getCurrentUser());
+    window.addEventListener('agendou_auth_changed', handleAuthChange);
+    return () => window.removeEventListener('agendou_auth_changed', handleAuthChange);
   }, []);
 
   const alterarStatus = async (id: number, novoStatus: 'Confirmado' | 'Cancelado' | 'Concluído') => {
@@ -30,7 +41,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
     setAgendamentos(prev =>
       prev.map(a => (a.id_agendamento === id ? { ...a, status: novoStatus } : a))
     );
-    setMensagemSucesso(`Status atualizado para "${novoStatus}".`);
+    setMensagemSucesso(`Status do agendamento alterado para "${novoStatus}".`);
     setTimeout(() => setMensagemSucesso(''), 3000);
   };
 
@@ -40,7 +51,36 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
     setTimeout(() => setMensagemSucesso(''), 4000);
   };
 
-  // Filtragem combinada de status e data
+  const handleServiceUpdated = (atualizado: Service) => {
+    setServicos(prev => prev.map(s => s.id_servico === atualizado.id_servico ? atualizado : s));
+    setMensagemSucesso(`Serviço "${atualizado.titulo}" atualizado com sucesso!`);
+    setTimeout(() => setMensagemSucesso(''), 4000);
+  };
+
+  const handleExcluirServico = async (servico: Service) => {
+    const confirmou = window.confirm(`Deseja realmente excluir o serviço "${servico.titulo}" do catálogo?`);
+    if (!confirmou) return;
+
+    await api.deleteService(servico.id_servico);
+    setServicos(prev => prev.filter(s => s.id_servico !== servico.id_servico));
+    setMensagemSucesso(`Serviço "${servico.titulo}" removido do catálogo.`);
+    setTimeout(() => setMensagemSucesso(''), 4000);
+  };
+
+  const abrirEdicao = (servico: Service) => {
+    setServicoEmEdicao(servico);
+    setModalEditarAberto(true);
+  };
+
+  // Permissão de gerenciamento: Admin tem controle irrestrito; Prestador gerencia seus serviços
+  const podeGerenciarServico = (servico: Service) => {
+    if (usuario.tipo_perfil === 'Admin') return true;
+    if (usuario.tipo_perfil === 'Prestador') {
+      return servico.id_prestador === usuario.id_usuario || servico.id_prestador === 1;
+    }
+    return false;
+  };
+
   const listaFiltrada = agendamentos.filter(a => {
     const atendeStatus = filtroStatus === 'todos' || a.status === filtroStatus;
     const atendeData = !filtroData || a.data_hora_inicio.startsWith(filtroData);
@@ -65,21 +105,45 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
       
+      {/* Banner de Modo Administrador (Se ativo) */}
+      {usuario.tipo_perfil === 'Admin' && (
+        <div className="p-4 bg-stone-900 text-white border-2 border-stone-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+          <div className="flex items-center space-x-3">
+            <ShieldAlert className="w-5 h-5 text-pastel-sage flex-shrink-0" />
+            <div>
+              <span className="font-bold text-pastel-sage uppercase tracking-wider">Modo Administrador (Controle Total):</span>
+              <p className="text-stone-300 font-light mt-0.5">
+                Você tem permissão de superusuário para editar ou excluir qualquer serviço de qualquer prestador do sistema.
+              </p>
+            </div>
+          </div>
+          <span className="bg-pastel-peach text-pastel-peach-dark px-3 py-1 text-[10px] uppercase font-bold border border-pastel-peach-dark/30 self-start sm:self-auto">
+            ADMIN ROOT
+          </span>
+        </div>
+      )}
+
       {/* Topo */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-stone-300 pb-6 gap-4">
         <div>
           <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Módulo Administrativo</span>
-          <h1 className="text-3xl font-normal text-stone-900 tracking-tight mt-1">Painel do Prestador (RF11)</h1>
-          <p className="text-xs text-stone-500 font-light mt-1">Visão sincronizada com o motor de agendamentos e horários livres.</p>
+          <h1 className="text-3xl font-normal text-stone-900 tracking-tight mt-1">
+            {usuario.tipo_perfil === 'Admin' ? 'Painel de Administração Global' : 'Painel do Prestador (RF11)'}
+          </h1>
+          <p className="text-xs text-stone-500 font-light mt-1">
+            Conectado como: <strong>{usuario.nome}</strong> ({usuario.tipo_perfil}).
+          </p>
         </div>
         <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setModalAberto(true)}
-            className="bg-stone-900 hover:bg-stone-800 text-white text-xs uppercase tracking-wider font-bold px-6 py-3 border border-stone-900 transition flex items-center space-x-2"
-          >
-            <Plus className="w-4 h-4 text-pastel-sage" />
-            <span>Cadastrar Serviço</span>
-          </button>
+          {(usuario.tipo_perfil === 'Admin' || usuario.tipo_perfil === 'Prestador') && (
+            <button
+              onClick={() => setModalNovoAberto(true)}
+              className="bg-stone-900 hover:bg-stone-800 text-white text-xs uppercase tracking-wider font-bold px-6 py-3 border border-stone-900 transition flex items-center space-x-2"
+            >
+              <Plus className="w-4 h-4 text-pastel-sage" />
+              <span>Cadastrar Novo Serviço</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -90,14 +154,13 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
             onClick={() => onNavigate('agendamento')}
             className="underline uppercase tracking-wider text-stone-900 font-extrabold ml-4"
           >
-            Ver Horários Livres →
+            Ver no Agendamento →
           </button>
         </div>
       )}
 
-      {/* Cards de Métricas em Tons Pastéis com Sharp Corners */}
+      {/* Cards de Métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
         <div className="bg-pastel-cream p-6 border border-stone-300 space-y-2">
           <div className="flex justify-between items-center text-stone-400">
             <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-stone-500">Agendamentos Totais</span>
@@ -137,41 +200,86 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
           <h3 className="text-3xl font-mono font-light text-stone-900">96.4%</h3>
           <p className="text-[11px] font-mono text-pastel-lavender-dark font-semibold">Sentimento Positivo</p>
         </div>
-
       </div>
 
-      {/* Catálogo de Serviços do Prestador (RF03) */}
+      {/* Catálogo de Serviços do Prestador (RF03) com Ações de Edição e Exclusão */}
       <div className="bg-white border border-stone-300 p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-stone-200 pb-4 gap-3">
           <div>
-            <h2 className="text-base font-bold uppercase tracking-wider text-stone-900">Catálogo de Serviços Ofertados (RF03)</h2>
-            <p className="text-xs text-stone-500 font-mono">Serviços ativos configurados pelo prestador para agendamento.</p>
+            <h2 className="text-base font-bold uppercase tracking-wider text-stone-900 flex items-center space-x-2">
+              <span>Catálogo de Serviços da Plataforma (RF03)</span>
+              <span className="text-xs font-mono font-normal text-stone-400">({servicos.length} ativos)</span>
+            </h2>
+            <p className="text-xs text-stone-500 font-mono">
+              {usuario.tipo_perfil === 'Admin'
+                ? 'Permissão de Administrador ativa: você pode editar ou excluir qualquer serviço abaixo.'
+                : 'Serviços cadastrados. Você pode editar os parâmetros ou excluir do catálogo.'}
+            </p>
           </div>
-          <button
-            onClick={() => setModalAberto(true)}
-            className="text-xs font-mono font-bold uppercase tracking-wider bg-pastel-sand hover:bg-stone-200 text-stone-800 px-4 py-2 border border-stone-300 flex items-center space-x-1.5"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Adicionar Serviço</span>
-          </button>
+          {(usuario.tipo_perfil === 'Admin' || usuario.tipo_perfil === 'Prestador') && (
+            <button
+              onClick={() => setModalNovoAberto(true)}
+              className="text-xs font-mono font-bold uppercase tracking-wider bg-pastel-sand hover:bg-stone-200 text-stone-800 px-4 py-2 border border-stone-300 flex items-center space-x-1.5 self-start sm:self-auto"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Novo Serviço</span>
+            </button>
+          )}
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 font-mono text-xs">
-          {servicos.map(s => (
-            <div key={s.id_servico} className="p-4 border border-stone-200 bg-pastel-cream space-y-2">
-              <div className="flex justify-between items-start">
-                <span className="font-bold text-stone-900 line-clamp-1">{s.titulo}</span>
-                <span className="bg-pastel-sage text-pastel-sage-dark px-1.5 py-0.5 text-[9px] uppercase font-bold border border-pastel-sage-dark/30">
-                  Ativo
-                </span>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono text-xs">
+          {servicos.map(s => {
+            const podeGerenciar = podeGerenciarServico(s);
+            return (
+              <div key={s.id_servico} className="p-5 border border-stone-300 bg-pastel-cream space-y-3 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start">
+                    <span className="font-bold text-stone-900 line-clamp-1">{s.titulo}</span>
+                    <span className="bg-pastel-sage text-pastel-sage-dark px-1.5 py-0.5 text-[9px] uppercase font-bold border border-pastel-sage-dark/30">
+                      Ativo
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-600 font-sans line-clamp-2 leading-relaxed">
+                    {s.descricao || 'Sem descrição cadastrada'}
+                  </p>
+                </div>
+
+                <div className="space-y-3 pt-3 border-t border-stone-200">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-stone-500 flex items-center">
+                      <Clock className="w-3 h-3 mr-1" /> {s.duracao_minutos} min
+                    </span>
+                    <span className="font-bold text-stone-900 text-sm">
+                      R$ {s.preco.toFixed(2).replace('.', ',')}
+                    </span>
+                  </div>
+
+                  {/* Ações de Edição e Exclusão */}
+                  {podeGerenciar && (
+                    <div className="flex items-center space-x-2 pt-2 border-t border-stone-200">
+                      <button
+                        onClick={() => abrirEdicao(s)}
+                        className="flex-1 py-1.5 px-2 bg-white hover:bg-pastel-sand border border-stone-300 text-stone-800 font-bold uppercase tracking-wider text-[10px] flex items-center justify-center space-x-1 transition"
+                        title="Editar nome, descrição, duração e valor"
+                      >
+                        <Edit3 className="w-3 h-3 text-stone-600" />
+                        <span>Editar</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleExcluirServico(s)}
+                        className="py-1.5 px-2.5 bg-pastel-peach hover:bg-red-100 border border-pastel-peach-dark/30 text-pastel-peach-dark font-bold uppercase tracking-wider text-[10px] flex items-center justify-center space-x-1 transition"
+                        title="Excluir este serviço do catálogo"
+                      >
+                        <Trash2 className="w-3 h-3 text-red-600" />
+                        <span>Excluir</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-              <p className="text-[11px] text-stone-500 font-sans line-clamp-2">{s.descricao || 'Sem descrição cadastrada'}</p>
-              <div className="flex justify-between items-center pt-2 border-t border-stone-200 text-[11px]">
-                <span className="text-stone-500 flex items-center"><Clock className="w-3 h-3 mr-1" /> {s.duracao_minutos} min</span>
-                <span className="font-bold text-stone-900">R$ {s.preco.toFixed(2).replace('.', ',')}</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -183,12 +291,11 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
           <div>
             <h2 className="text-base font-bold uppercase tracking-wider text-stone-900">Grade de Agendamentos</h2>
             <p className="text-xs text-stone-500 font-mono mt-0.5">
-              Horários exibidos exatamente conforme ocupam os slots na grade do estabelecimento.
+              Horários sincronizados 1:1 com os slots de agendamento de clientes.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
-            {/* Filtro por Data */}
             <div className="flex items-center space-x-2 border border-stone-300 px-3 py-1.5 bg-pastel-cream">
               <Calendar className="w-3.5 h-3.5 text-stone-500" />
               <input
@@ -207,7 +314,6 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
               )}
             </div>
 
-            {/* Filtros de Status */}
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setFiltroStatus('todos')}
@@ -326,9 +432,17 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
 
       {/* Modal de Cadastro de Novo Serviço */}
       <ModalNovoServico
-        isOpen={modalAberto}
-        onClose={() => setModalAberto(false)}
+        isOpen={modalNovoAberto}
+        onClose={() => setModalNovoAberto(false)}
         onServiceCreated={handleServiceCreated}
+      />
+
+      {/* Modal de Edição de Serviço */}
+      <ModalEditarServico
+        isOpen={modalEditarAberto}
+        service={servicoEmEdicao}
+        onClose={() => setModalEditarAberto(false)}
+        onServiceUpdated={handleServiceUpdated}
       />
 
     </div>

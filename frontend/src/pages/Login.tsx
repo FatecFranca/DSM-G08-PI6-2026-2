@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { User, Lock, Mail, Phone, Building2, MapPin, CheckCircle } from 'lucide-react';
+import { User, Lock, Mail, Phone, Building2, MapPin, CheckCircle, ShieldAlert } from 'lucide-react';
+import { api, PERFIS_DEMO } from '../services/api';
+import { UserRole } from '../types';
 
 interface LoginProps {
   onNavigate: (page: string) => void;
@@ -7,9 +9,9 @@ interface LoginProps {
 
 export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
   const [aba, setAba] = useState<'login' | 'register'>('login');
-  const [tipoPerfil, setTipoPerfil] = useState<'Cliente' | 'Prestador'>('Cliente');
+  const [tipoPerfil, setTipoPerfil] = useState<UserRole>('Admin');
   const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('cliente@exemplo.com');
+  const [email, setEmail] = useState('admin@agendou.com');
   const [senha, setSenha] = useState('123456');
   const [telefone, setTelefone] = useState('');
   const [nomeNegocio, setNomeNegocio] = useState('');
@@ -19,14 +21,43 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (aba === 'login') {
-      onNavigate(email.includes('prestador') ? 'dashboard' : 'agendamento');
+      let role: UserRole = 'Admin';
+      if (email.includes('prestador')) role = 'Prestador';
+      else if (email.includes('cliente')) role = 'Cliente';
+
+      const userPerfil = {
+        id_usuario: role === 'Admin' ? 99 : (role === 'Prestador' ? 1 : 2),
+        nome: role === 'Admin' ? 'Hugo Rodrigues' : (role === 'Prestador' ? 'Carlos Barbearia' : 'Mariana Silva'),
+        email,
+        tipo_perfil: role,
+        nome_negocio: role === 'Prestador' ? 'Barbearia VIP Vintage' : undefined
+      };
+
+      api.setCurrentUser(userPerfil);
+      onNavigate(role === 'Cliente' ? 'agendamento' : 'dashboard');
     } else {
-      setMensagemSucesso('Conta cadastrada com sucesso! Redirecionando...');
+      const novoUsuario = {
+        id_usuario: Date.now(),
+        nome,
+        email,
+        tipo_perfil: tipoPerfil,
+        nome_negocio: tipoPerfil === 'Prestador' ? nomeNegocio : undefined
+      };
+      api.setCurrentUser(novoUsuario);
+
+      setMensagemSucesso(`Conta criada com perfil "${tipoPerfil}"! Redirecionando...`);
       setTimeout(() => {
-        setAba('login');
-        setMensagemSucesso('');
-      }, 1500);
+        onNavigate(tipoPerfil === 'Cliente' ? 'agendamento' : 'dashboard');
+      }, 1200);
     }
+  };
+
+  const selecionarPerfilDemo = (perfilKey: 'admin' | 'prestador' | 'cliente') => {
+    const demo = PERFIS_DEMO[perfilKey];
+    setEmail(demo.email);
+    setTipoPerfil(demo.tipo_perfil);
+    api.setCurrentUser(demo);
+    onNavigate(demo.tipo_perfil === 'Cliente' ? 'agendamento' : 'dashboard');
   };
 
   return (
@@ -70,16 +101,16 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
           
           {aba === 'register' && (
             <>
-              {/* Seleção de Perfil (RF01) */}
+              {/* Seleção de Perfil (RF01 - CLIENT, PROVIDER, ADMIN) */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-2 font-mono">
-                  Perfil de Usuário:
+                  Selecione seu Perfil de Acesso:
                 </label>
-                <div className="grid grid-cols-2 gap-2 font-mono text-xs">
+                <div className="grid grid-cols-3 gap-2 font-mono text-xs">
                   <button
                     type="button"
                     onClick={() => setTipoPerfil('Cliente')}
-                    className={`p-3 border text-center font-bold uppercase tracking-wider transition ${
+                    className={`p-2.5 border text-center font-bold uppercase tracking-wider text-[11px] transition ${
                       tipoPerfil === 'Cliente'
                         ? 'bg-stone-900 text-white border-stone-900'
                         : 'bg-pastel-cream text-stone-600 border-stone-300 hover:border-stone-500'
@@ -91,13 +122,25 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
                   <button
                     type="button"
                     onClick={() => setTipoPerfil('Prestador')}
-                    className={`p-3 border text-center font-bold uppercase tracking-wider transition ${
+                    className={`p-2.5 border text-center font-bold uppercase tracking-wider text-[11px] transition ${
                       tipoPerfil === 'Prestador'
                         ? 'bg-stone-900 text-white border-stone-900'
                         : 'bg-pastel-cream text-stone-600 border-stone-300 hover:border-stone-500'
                     }`}
                   >
                     Prestador
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTipoPerfil('Admin')}
+                    className={`p-2.5 border text-center font-bold uppercase tracking-wider text-[11px] transition ${
+                      tipoPerfil === 'Admin'
+                        ? 'bg-stone-900 text-white border-stone-900'
+                        : 'bg-pastel-cream text-stone-600 border-stone-300 hover:border-stone-500'
+                    }`}
+                  >
+                    Admin
                   </button>
                 </div>
               </div>
@@ -215,29 +258,36 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
             type="submit"
             className="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs uppercase tracking-wider py-4 border border-stone-900 transition"
           >
-            {aba === 'login' ? 'Acessar Plataforma' : 'Concluir Cadastro'}
+            {aba === 'login' ? 'Entrar no Sistema' : 'Concluir Cadastro'}
           </button>
 
-          {aba === 'login' && (
-            <div className="pt-2 text-center text-xs font-mono text-stone-500">
-              Alternar acesso demonstrativo:{' '}
+          {/* Atalhos Rápidos para Demonstração de Perfis */}
+          <div className="pt-3 border-t border-stone-200 text-center font-mono text-xs text-stone-500 space-y-2">
+            <p className="uppercase tracking-wider text-[10px] font-bold text-stone-400">Entrar direto com perfil demo:</p>
+            <div className="flex justify-center gap-2">
               <button
                 type="button"
-                onClick={() => setEmail('prestador@exemplo.com')}
-                className="text-stone-900 font-bold underline"
+                onClick={() => selecionarPerfilDemo('admin')}
+                className="px-2.5 py-1.5 bg-pastel-sand hover:bg-stone-900 hover:text-white border border-stone-300 text-stone-800 font-bold text-[11px] transition"
               >
-                Prestador
+                🛡️ Admin
               </button>
-              {' • '}
               <button
                 type="button"
-                onClick={() => setEmail('cliente@exemplo.com')}
-                className="text-stone-900 font-bold underline"
+                onClick={() => selecionarPerfilDemo('prestador')}
+                className="px-2.5 py-1.5 bg-pastel-blue hover:bg-stone-900 hover:text-white border border-pastel-blue-dark/30 text-stone-800 font-bold text-[11px] transition"
               >
-                Cliente
+                🛠️ Prestador
+              </button>
+              <button
+                type="button"
+                onClick={() => selecionarPerfilDemo('cliente')}
+                className="px-2.5 py-1.5 bg-pastel-cream hover:bg-stone-900 hover:text-white border border-stone-300 text-stone-800 font-bold text-[11px] transition"
+              >
+                👤 Cliente
               </button>
             </div>
-          )}
+          </div>
 
         </form>
 
