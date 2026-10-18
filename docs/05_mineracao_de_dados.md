@@ -1,4 +1,4 @@
-# Mineração de Dados: Definição da Base de Dados e Planejamento Inicial
+# Mineração de Dados: Yelp, sentimento e agrupamento de estabelecimentos
 
 **Projeto Interdisciplinar (PI) – 6º Semestre**  
 **Disciplina-Satélite:** Mineração de Dados  
@@ -99,3 +99,43 @@ Os artefatos implementados para esta etapa encontram-se estruturados na pasta `/
 - **Dataset de Amostra:** [dataset_avaliacoes_exemplo.csv](file:///C:/Users/hugo/Documents/Faculdade/data-mining/dataset_avaliacoes_exemplo.csv)
 - **Script de Treinamento e Mineração:** [analise_sentimento.py](file:///C:/Users/hugo/Documents/Faculdade/data-mining/analise_sentimento.py)
 - **Módulo Executável no Back-end:** [sentiment.service.ts](file:///C:/Users/hugo/Documents/Faculdade/backend/src/services/sentiment.service.ts)
+
+---
+
+## 5. Agrupamento não supervisionado de estabelecimentos
+
+Além da análise de sentimento, o projeto utiliza o arquivo `yelp_academic_dataset_business.json` para descobrir grupos de negócios com características parecidas, sem rótulos prévios. Essa é uma tarefa de mineração de dados e um exemplo de aprendizado não supervisionado.
+
+### 5.1 Obtenção dos dados
+
+O Yelp Dataset é distribuído pelo [Kaggle](https://www.kaggle.com/datasets/yelp-dataset/yelp-dataset) e requer uma conta e aceitação dos termos aplicáveis. A base completa é grande; por isso, os arquivos originais não devem ser commitados no repositório. Baixe o arquivo pelo botão **Download** da página do dataset, extraia `yelp_academic_dataset_business.json` e coloque-o em `data-mining/dataset/`. Essa pasta é ignorada pelo Git.
+
+### 5.2 Preparação e atributos
+
+O script [`data-mining/agrupamento_estabelecimentos.py`](../data-mining/agrupamento_estabelecimentos.py) lê o JSON Lines de negócios e usa:
+
+- nota média (`stars`) e quantidade de avaliações (`review_count`, transformada com `log1p`);
+- situação aberta/fechada (`is_open`) e localização (latitude e longitude);
+- estado (`state`) e categorias comerciais (`categories`).
+
+Registros sem categoria ou coordenadas são removidos. Atributos numéricos são padronizados, estados são codificados e categorias são representadas com TF-IDF. O K-Means encontra os grupos sem utilizar as notas como rótulos-alvo. O script informa tamanho dos clusters e silhouette score aproximado em uma amostra, além de salvar os rótulos em CSV.
+
+### 5.3 Execução
+
+Com Python 3.10 ou superior e o arquivo baixado na pasta indicada:
+
+```bash
+cd data-mining
+pip install pandas scikit-learn
+python agrupamento_estabelecimentos.py
+```
+
+O padrão cria `data-mining/resultados_agrupamento.csv` com cinco grupos. É possível mudar os parâmetros, por exemplo:
+
+```bash
+python agrupamento_estabelecimentos.py --input dataset/yelp_academic_dataset_business.json --clusters 6 --output resultados/negocios_clusterizados.csv
+```
+
+### 5.4 Interpretação e limitações
+
+O número de grupos (`--clusters`) e os atributos escolhidos afetam o resultado. Coordenadas podem fazer a proximidade geográfica pesar na formação dos grupos; notas, popularidade e categorias também refletem dimensões distintas do negócio. Silhouette é uma medida auxiliar, não prova que os grupos sejam úteis. Compare perfil, categorias e distribuição de cada cluster e valide a interpretação com o contexto do problema antes de usá-la para decisões. K-Means também pode não representar bem grupos de formatos irregulares ou tamanhos muito diferentes.

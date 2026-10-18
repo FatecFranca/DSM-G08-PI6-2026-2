@@ -34,7 +34,7 @@ O objetivo central desta primeira entrega consiste na concepção integral do es
 | **5. Protótipo inicial do front-end** | ✅ Concluído | [frontend/](frontend/) (5 telas estáticas responsivas baseadas no Figma/Canva com Tailwind CSS) |
 | **6. Banco de dados modelado** | ✅ Concluído | [docs/03_banco_de_dados_conceitual_e_logico.md](docs/03_banco_de_dados_conceitual_e_logico.md) e DDL [docs/schema.sql](docs/schema.sql) |
 | **7. Computação em Nuvem II** | ✅ Concluído | [docs/04_computacao_em_nuvem_II.md](docs/04_computacao_em_nuvem_II.md) (Arquitetura AWS com ECS, RDS, S3, CloudFront e IAM) |
-| **8. Mineração de Dados** | ✅ Concluído | [docs/05_mineracao_de_dados.md](docs/05_mineracao_de_dados.md) (Base de referência [Yelp Dataset - Kaggle](https://www.kaggle.com/datasets/yelp-dataset/yelp-dataset), [data-mining/dataset_avaliacoes_exemplo.csv](data-mining/dataset_avaliacoes_exemplo.csv) e [data-mining/analise_sentimento.py](data-mining/analise_sentimento.py)) |
+| **8. Mineração de Dados** | ✅ Concluído | [docs/05_mineracao_de_dados.md](docs/05_mineracao_de_dados.md) (Yelp Dataset, análise de sentimento e [agrupamento de estabelecimentos](data-mining/agrupamento_estabelecimentos.py)) |
 
 ---
 
@@ -107,7 +107,7 @@ O objetivo central desta primeira entrega consiste na concepção integral do es
 
 ---
 
-### 4. Executando a Mineração de Dados (Python)
+### 4. Executando a análise de sentimento (Python)
 
 1. Acesse a pasta:
    ```bash
@@ -121,6 +121,18 @@ O objetivo central desta primeira entrega consiste na concepção integral do es
    ```bash
    python analise_sentimento.py
    ```
+
+#### Agrupamento não supervisionado de estabelecimentos
+
+Baixe o Yelp Dataset pela [página do Kaggle](https://www.kaggle.com/datasets/yelp-dataset/yelp-dataset), extraia `yelp_academic_dataset_business.json` para `data-mining/dataset/` e então rode:
+
+```bash
+cd data-mining
+pip install pandas scikit-learn
+python agrupamento_estabelecimentos.py --clusters 5
+```
+
+O script gera `data-mining/resultados_agrupamento.csv` e exibe tamanhos dos grupos e silhouette score aproximado. Consulte [docs/05_mineracao_de_dados.md](docs/05_mineracao_de_dados.md) para os atributos e limitações da análise. A base completa não é incluída no Git por seu tamanho; obtenha-a no Kaggle e observe os termos da distribuição.
 
 ---
 

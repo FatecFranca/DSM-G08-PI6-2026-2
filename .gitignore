@@ -47,6 +47,10 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 
+# Yelp Dataset (arquivos grandes obtidos separadamente no Kaggle)
+data-mining/dataset/
+data-mining/resultados_agrupamento.csv
+
 # Arquivos pessoais e PDFs locais (não enviar ao GitHub)
 *.pdf
 relatorios_pessoais/
