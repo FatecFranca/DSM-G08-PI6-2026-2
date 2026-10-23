@@ -21,6 +21,7 @@ export const ModalEditarServico: React.FC<ModalEditarServicoProps> = ({
   const [duracaoMinutos, setDuracaoMinutos] = useState('45');
   const [preco, setPreco] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
 
   useEffect(() => {
     if (service) {
@@ -38,16 +39,21 @@ export const ModalEditarServico: React.FC<ModalEditarServicoProps> = ({
     if (!titulo || !preco) return;
 
     setSalvando(true);
-    const atualizado = await api.updateService(service.id_servico, {
-      titulo,
-      descricao,
-      duracao_minutos: parseInt(duracaoMinutos) || 45,
-      preco: parseFloat(preco.replace(',', '.')) || 0
-    });
-
-    setSalvando(false);
-    onServiceUpdated(atualizado);
-    onClose();
+    setErro('');
+    try {
+      const atualizado = await api.updateService(service.id_servico, {
+        titulo,
+        descricao,
+        duracao_minutos: parseInt(duracaoMinutos, 10),
+        preco: parseFloat(preco.replace(',', '.'))
+      });
+      onServiceUpdated(atualizado);
+      onClose();
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : 'Não foi possível atualizar o serviço.');
+    } finally {
+      setSalvando(false);
+    }
   };
 
   return (
@@ -68,6 +74,7 @@ export const ModalEditarServico: React.FC<ModalEditarServicoProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
+          {erro && <p role="alert" className="border border-red-300 bg-red-50 p-3 text-red-800">{erro}</p>}
           
           <div>
             <label className="block text-stone-600 font-bold uppercase tracking-wider mb-1.5">

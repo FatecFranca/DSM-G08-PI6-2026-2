@@ -50,16 +50,16 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
               {/* Indicadores Minimalistas com Linhas Retas */}
               <div className="pt-8 border-t border-stone-200 grid grid-cols-3 gap-8 max-w-lg">
                 <div>
-                  <p className="text-3xl font-light text-stone-900 font-mono">0.00%</p>
-                  <p className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mt-1">Conflitos de Agenda</p>
+                  <p className="text-3xl font-light text-stone-900 font-mono">API</p>
+                  <p className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mt-1">Validação no servidor</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-light text-pastel-sage-dark font-mono">&lt; 10ms</p>
-                  <p className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mt-1">Classificação IA</p>
+                  <p className="text-3xl font-light text-pastel-sage-dark font-mono">NLP</p>
+                  <p className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mt-1">Sentimento nas avaliações</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-light text-stone-900 font-mono">100%</p>
-                  <p className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mt-1">Disponibilidade</p>
+                  <p className="text-3xl font-light text-stone-900 font-mono">SQL</p>
+                  <p className="text-[11px] uppercase tracking-wider text-stone-500 font-semibold mt-1">Dados persistidos</p>
                 </div>
               </div>
             </div>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { User, Lock, Mail, Phone, Building2, MapPin, CheckCircle, ShieldAlert } from 'lucide-react';
+import { User, Lock, Mail, Phone, Building2, MapPin, CheckCircle } from 'lucide-react';
 import { api, PERFIS_DEMO } from '../services/api';
-import { UserRole } from '../types';
 
 interface LoginProps {
   onNavigate: (page: string) => void;
@@ -9,55 +8,46 @@ interface LoginProps {
 
 export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
   const [aba, setAba] = useState<'login' | 'register'>('login');
-  const [tipoPerfil, setTipoPerfil] = useState<UserRole>('Admin');
+  const [tipoPerfil, setTipoPerfil] = useState<'Cliente' | 'Prestador'>('Cliente');
   const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('admin@agendou.com');
-  const [senha, setSenha] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
   const [telefone, setTelefone] = useState('');
   const [nomeNegocio, setNomeNegocio] = useState('');
   const [endereco, setEndereco] = useState('');
   const [mensagemSucesso, setMensagemSucesso] = useState('');
+  const [erro, setErro] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (aba === 'login') {
-      let role: UserRole = 'Admin';
-      if (email.includes('prestador')) role = 'Prestador';
-      else if (email.includes('cliente')) role = 'Cliente';
-
-      const userPerfil = {
-        id_usuario: role === 'Admin' ? 99 : (role === 'Prestador' ? 1 : 2),
-        nome: role === 'Admin' ? 'Hugo Rodrigues' : (role === 'Prestador' ? 'Carlos Barbearia' : 'Mariana Silva'),
-        email,
-        tipo_perfil: role,
-        nome_negocio: role === 'Prestador' ? 'Barbearia VIP Vintage' : undefined
-      };
-
-      api.setCurrentUser(userPerfil);
-      onNavigate(role === 'Cliente' ? 'agendamento' : 'dashboard');
-    } else {
-      const novoUsuario = {
-        id_usuario: Date.now(),
-        nome,
-        email,
-        tipo_perfil: tipoPerfil,
-        nome_negocio: tipoPerfil === 'Prestador' ? nomeNegocio : undefined
-      };
-      api.setCurrentUser(novoUsuario);
-
-      setMensagemSucesso(`Conta criada com perfil "${tipoPerfil}"! Redirecionando...`);
-      setTimeout(() => {
-        onNavigate(tipoPerfil === 'Cliente' ? 'agendamento' : 'dashboard');
-      }, 1200);
+    setErro('');
+    try {
+      const user = aba === 'login'
+        ? (await api.login(email, senha)).user
+        : (await api.register({
+          nome, email, senha, telefone, tipo_perfil: tipoPerfil,
+          nome_negocio: tipoPerfil === 'Prestador' ? nomeNegocio : undefined,
+          endereco: tipoPerfil === 'Prestador' ? endereco : undefined
+        })).user;
+      setMensagemSucesso(aba === 'login' ? 'Login realizado com sucesso.' : 'Conta criada com sucesso.');
+      onNavigate(user.tipo_perfil === 'Cliente' ? 'agendamento' : 'dashboard');
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : 'Não foi possível autenticar.');
     }
   };
 
-  const selecionarPerfilDemo = (perfilKey: 'admin' | 'prestador' | 'cliente') => {
+  const selecionarPerfilDemo = async (perfilKey: 'admin' | 'prestador' | 'cliente') => {
     const demo = PERFIS_DEMO[perfilKey];
     setEmail(demo.email);
-    setTipoPerfil(demo.tipo_perfil);
-    api.setCurrentUser(demo);
-    onNavigate(demo.tipo_perfil === 'Cliente' ? 'agendamento' : 'dashboard');
+    setSenha('Agendou2026!');
+    if (demo.tipo_perfil !== 'Admin') setTipoPerfil(demo.tipo_perfil);
+    setErro('');
+    try {
+      const { user } = await api.login(demo.email, 'Agendou2026!');
+      onNavigate(user.tipo_perfil === 'Cliente' ? 'agendamento' : 'dashboard');
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : 'Não foi possível acessar a conta de demonstração.');
+    }
   };
 
   return (
@@ -96,17 +86,18 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
             <span>{mensagemSucesso}</span>
           </div>
         )}
+        {erro && <div role="alert" className="border border-red-300 bg-red-50 p-3 text-xs text-red-800">{erro}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           
           {aba === 'register' && (
             <>
-              {/* Seleção de Perfil (RF01 - CLIENT, PROVIDER, ADMIN) */}
+              {/* Cadastro público não permite criação de contas administrativas. */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-2 font-mono">
                   Selecione seu Perfil de Acesso:
                 </label>
-                <div className="grid grid-cols-3 gap-2 font-mono text-xs">
+                <div className="grid grid-cols-2 gap-2 font-mono text-xs">
                   <button
                     type="button"
                     onClick={() => setTipoPerfil('Cliente')}
@@ -131,17 +122,6 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
                     Prestador
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setTipoPerfil('Admin')}
-                    className={`p-2.5 border text-center font-bold uppercase tracking-wider text-[11px] transition ${
-                      tipoPerfil === 'Admin'
-                        ? 'bg-stone-900 text-white border-stone-900'
-                        : 'bg-pastel-cream text-stone-600 border-stone-300 hover:border-stone-500'
-                    }`}
-                  >
-                    Admin
-                  </button>
                 </div>
               </div>
 
@@ -251,7 +231,7 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
                 className="w-full pl-10 pr-4 py-2.5 bg-pastel-cream border border-stone-300 text-sm focus:outline-none focus:border-stone-900 font-mono"
               />
             </div>
-            <p className="text-[10px] text-stone-400 font-mono mt-1">Hash bcrypt no banco (RNF03)</p>
+            <p className="text-[10px] text-stone-400 font-mono mt-1">Senha protegida com hash bcrypt.</p>
           </div>
 
           <button

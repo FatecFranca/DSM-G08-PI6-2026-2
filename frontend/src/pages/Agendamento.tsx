@@ -3,6 +3,9 @@ import { api } from '../services/api';
 import { Service, Slot } from '../types';
 import { Scissors, Clock, ShieldCheck, Check, CheckCircle2, Calendar } from 'lucide-react';
 
+const today = new Date();
+const todayLocal = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
 interface AgendamentoProps {
   onNavigate: (page: string) => void;
 }
@@ -10,38 +13,40 @@ interface AgendamentoProps {
 export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
   const [servicos, setServicos] = useState<Service[]>([]);
   const [servicoSelecionado, setServicoSelecionado] = useState<Service | null>(null);
-  const [dataSelecionada, setDataSelecionada] = useState<string>('2026-09-04');
+  const [dataSelecionada, setDataSelecionada] = useState<string>(todayLocal);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [slotSelecionado, setSlotSelecionado] = useState<string>('');
   const [tempoCalculoMs, setTempoCalculoMs] = useState<number>(4.2);
   const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
   const [modalSucesso, setModalSucesso] = useState<boolean>(false);
   const [ultimoAgendado, setUltimoAgendado] = useState<{ servico: string; data: string; hora: string } | null>(null);
+  const [erro, setErro] = useState('');
 
   // Carregar catálogo de serviços
   useEffect(() => {
-    api.getServices(1).then(data => {
+    api.getServices().then(data => {
       setServicos(data);
       if (data.length > 0) setServicoSelecionado(data[0]);
-    });
+    }).catch(error => setErro(error instanceof Error ? error.message : 'Não foi possível carregar os serviços.'));
   }, []);
 
   // Função para recarregar slots disponíveis
   const carregarSlots = useCallback(async (s: Service | null, data: string) => {
     if (!s) return;
     setLoadingSlots(true);
-    const res = await api.getAvailableSlots(1, s.id_servico, data, s.duracao_minutos, s.titulo);
-    setSlots(res.slots);
-    setTempoCalculoMs(res.tempoMs);
-
-    // Selecionar o primeiro slot que esteja livre
-    const primeiroLivre = res.slots.find(slot => !slot.ocupado);
-    if (primeiroLivre) {
-      setSlotSelecionado(primeiroLivre.inicio);
-    } else {
+    setErro('');
+    try {
+      const res = await api.getAvailableSlots(s.id_prestador, s.id_servico, data);
+      setSlots(res.slots);
+      setTempoCalculoMs(res.tempoMs);
+      setSlotSelecionado(res.slots[0]?.inicio || '');
+    } catch (error) {
+      setSlots([]);
       setSlotSelecionado('');
+      setErro(error instanceof Error ? error.message : 'Não foi possível consultar os horários.');
+    } finally {
+      setLoadingSlots(false);
     }
-    setLoadingSlots(false);
   }, []);
 
   // Recalcular slots livres quando serviço ou data mudar
@@ -56,36 +61,39 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
       alert('Por favor, selecione um horário livre disponível para continuar.');
       return;
     }
+    const user = api.getCurrentUser();
+    if (!localStorage.getItem('agendou_token') || user.tipo_perfil !== 'Cliente') {
+      setErro('Entre com uma conta de cliente para confirmar o agendamento.');
+      onNavigate('login');
+      return;
+    }
 
-    // Calcular data_hora_fim com a duração real do serviço
     const [h, m] = slotSelecionado.split(':').map(Number);
     const totalFimMin = h * 60 + m + servicoSelecionado.duracao_minutos;
     const horaFimStr = `${String(Math.floor(totalFimMin / 60)).padStart(2, '0')}:${String(totalFimMin % 60).padStart(2, '0')}`;
 
-    const dataHoraInicio = `${dataSelecionada}T${slotSelecionado}:00.000Z`;
-    const dataHoraFim = `${dataSelecionada}T${horaFimStr}:00.000Z`;
+    const dataHoraInicio = `${dataSelecionada}T${slotSelecionado}:00-03:00`;
+    const dataHoraFim = `${dataSelecionada}T${horaFimStr}:00-03:00`;
 
-    await api.createAppointment({
-      id_cliente: 2,
-      id_prestador: 1,
-      id_servico: servicoSelecionado.id_servico,
-      servico_titulo: servicoSelecionado.titulo,
-      servico_preco: servicoSelecionado.preco,
-      data_hora_inicio: dataHoraInicio,
-      data_hora_fim: dataHoraFim,
-      observacoes: 'Agendamento confirmado pelo cliente'
-    });
-
-    setUltimoAgendado({
-      servico: servicoSelecionado.titulo,
-      data: dataSelecionada,
-      hora: `${slotSelecionado} às ${horaFimStr}`
-    });
-
-    // Re-carregar slots imediatamente para que o horário recém-marcado vire Ocupado!
-    await carregarSlots(servicoSelecionado, dataSelecionada);
-
-    setModalSucesso(true);
+    setErro('');
+    try {
+      await api.createAppointment({
+        id_prestador: servicoSelecionado.id_prestador,
+        id_servico: servicoSelecionado.id_servico,
+        data_hora_inicio: dataHoraInicio,
+        observacoes: 'Agendamento confirmado pelo cliente'
+      });
+      setUltimoAgendado({
+        servico: servicoSelecionado.titulo,
+        data: dataSelecionada,
+        hora: `${slotSelecionado} às ${horaFimStr}`
+      });
+      await carregarSlots(servicoSelecionado, dataSelecionada);
+      setModalSucesso(true);
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : 'Não foi possível confirmar o agendamento.');
+      await carregarSlots(servicoSelecionado, dataSelecionada);
+    }
   };
 
   const totalLivres = slots.filter(s => !s.ocupado).length;
@@ -93,6 +101,7 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 space-y-10">
+      {erro && <p role="alert" className="border border-red-300 bg-red-50 p-4 text-sm text-red-800">{erro}</p>}
       
       {/* Cabeçalho do Prestador Minimalista */}
       <div className="bg-white p-8 border border-stone-300 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -102,24 +111,28 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
           </div>
           <div>
             <div className="flex items-center space-x-3">
-              <h1 className="text-2xl font-normal text-stone-900 tracking-tight">Barbearia VIP Vintage</h1>
+              <h1 className="text-2xl font-normal text-stone-900 tracking-tight">
+                {servicoSelecionado?.prestador_nome_negocio || 'Prestadores de serviços'}
+              </h1>
               <span className="bg-pastel-sage text-pastel-sage-dark border border-pastel-sage-dark/30 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5">
-                Verificado
+                Agendamento online
               </span>
             </div>
-            <p className="text-xs text-stone-500 font-mono mt-1">Av. Paulista, 1000 - Bela Vista, São Paulo/SP</p>
+            {servicoSelecionado?.prestador_endereco && (
+              <p className="text-xs text-stone-500 font-mono mt-1">{servicoSelecionado.prestador_endereco}</p>
+            )}
             <div className="flex items-center space-x-4 text-xs font-mono text-stone-600 mt-2">
-              <span className="text-pastel-amber-dark font-bold">★ 4.9 (128 avaliações)</span>
+              <span className="text-pastel-amber-dark font-bold">Agendamento online</span>
               <span>•</span>
-              <span className="text-stone-900 font-semibold">98% Sentimento Positivo (IA)</span>
+              <span className="text-stone-900 font-semibold">Avaliações após atendimento</span>
             </div>
           </div>
         </div>
 
         <div className="bg-pastel-cream p-4 border border-stone-200 text-xs font-mono space-y-1">
           <p className="font-bold text-stone-800 uppercase tracking-wider text-[11px]">Jornada de Trabalho (RF04)</p>
-          <p className="text-stone-600">Seg a Sex: 09:00 às 19:00</p>
-          <p className="text-stone-400 text-[11px]">Almoço: 12:00 às 13:00</p>
+          <p className="text-stone-600">Consulte os horários disponíveis por data</p>
+          <p className="text-stone-400 text-[11px]">O sistema considera a jornada cadastrada</p>
         </div>
       </div>
 
@@ -157,6 +170,7 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-bold text-stone-900 text-sm">{s.titulo}</h3>
+                      <p className="text-[11px] text-stone-500 mt-1">{s.prestador_nome_negocio || 'Prestador'}</p>
                       <p className="text-xs text-stone-600 mt-1 font-light leading-relaxed">{s.descricao}</p>
                       <div className="flex items-center space-x-2 mt-3 text-xs font-mono text-stone-500">
                         <Clock className="w-3.5 h-3.5" />
@@ -200,6 +214,7 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
               <input
                 type="date"
                 value={dataSelecionada}
+                min={todayLocal}
                 onChange={e => setDataSelecionada(e.target.value)}
                 className="w-full px-4 py-2.5 bg-pastel-cream border border-stone-300 text-sm font-mono font-semibold text-stone-800 focus:outline-none focus:border-stone-900"
               />
@@ -217,7 +232,7 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
                   </span>
                 </div>
                 <span className="text-stone-400 text-[10px]">
-                  {tempoCalculoMs}ms (RNF01 OK)
+                  {tempoCalculoMs}ms (RNF01 {tempoCalculoMs < 2000 ? 'OK' : 'VIOLADO'})
                 </span>
               </div>
 
@@ -333,20 +348,9 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
               >
                 Continuar Agendando
               </button>
-              <button
-                onClick={() => {
-                  if (servicoSelecionado) {
-                    localStorage.setItem('agendou_avaliacao_alvo', JSON.stringify({
-                      id_servico: servicoSelecionado.id_servico,
-                      servico_titulo: servicoSelecionado.titulo
-                    }));
-                  }
-                  onNavigate('avaliacao');
-                }}
-                className="w-full bg-pastel-lavender hover:bg-pastel-lavender/80 text-pastel-lavender-dark text-xs font-bold uppercase tracking-wider py-3 border border-pastel-lavender-dark/30 transition flex items-center justify-center space-x-1.5"
-              >
-                <span>Avaliar Atendimento com IA (NLP)</span>
-              </button>
+              <p className="text-center text-[11px] text-stone-500">
+                A avaliação ficará disponível em “Meus Agendamentos” após o prestador concluir o atendimento.
+              </p>
               <button
                 onClick={() => onNavigate('dashboard')}
                 className="w-full bg-pastel-sand text-stone-800 text-xs font-bold uppercase tracking-wider py-3 border border-stone-300 hover:bg-stone-200 transition"

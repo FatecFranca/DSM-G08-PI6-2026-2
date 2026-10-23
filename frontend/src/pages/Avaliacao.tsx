@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { SentimentResponse, Service } from '../types';
+import { Appointment, SentimentResponse, Service } from '../types';
 import { Star, CheckCircle2, Brain } from 'lucide-react';
 
 interface AvaliacaoProps {
@@ -9,50 +9,47 @@ interface AvaliacaoProps {
 
 export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
   const [servicos, setServicos] = useState<Service[]>([]);
+  const [agendamentosConcluidos, setAgendamentosConcluidos] = useState<Appointment[]>([]);
+  const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<number | null>(null);
   const [servicoSelecionado, setServicoSelecionado] = useState<Service | null>(null);
   const [nota, setNota] = useState<number>(5);
   const [comentario, setComentario] = useState<string>('O atendimento e a didática foram excelentes, super recomendo!');
   const [analiseIA, setAnaliseIA] = useState<SentimentResponse | null>(null);
   const [enviado, setEnviado] = useState<boolean>(false);
   const [salvando, setSalvando] = useState<boolean>(false);
+  const [erro, setErro] = useState('');
 
   // Carregar lista de serviços e sincronizar serviço alvo
   useEffect(() => {
-    let alvoInfo: any = null;
+    let appointmentId: number | undefined;
     try {
       const raw = localStorage.getItem('agendou_avaliacao_alvo');
-      if (raw) alvoInfo = JSON.parse(raw);
-    } catch (_) {}
+      if (raw) appointmentId = Number((JSON.parse(raw) as { id_agendamento?: number }).id_agendamento);
+    } catch (error) {
+      console.error('Não foi possível ler o atendimento selecionado para avaliação.', error);
+    }
 
-    api.getServices().then(lista => {
-      setServicos(lista);
-
-      if (alvoInfo) {
-        const match = lista.find(s => 
-          (alvoInfo.id_servico && s.id_servico === alvoInfo.id_servico) ||
-          (alvoInfo.servico_titulo && s.titulo.toLowerCase().trim() === alvoInfo.servico_titulo.toLowerCase().trim())
-        );
-        if (match) {
-          setServicoSelecionado(match);
-          return;
+    Promise.all([api.getServices(), api.getAppointments()])
+      .then(([lista, appointments]) => {
+        setServicos(lista);
+        const concluidos = appointments.filter(appointment => appointment.status === 'Concluído' && !appointment.avaliado);
+        setAgendamentosConcluidos(concluidos);
+        const selected = concluidos.find(appointment => appointment.id_agendamento === appointmentId) || concluidos[0];
+        if (selected) {
+          setAgendamentoSelecionado(selected.id_agendamento);
+          setServicoSelecionado(lista.find(service => service.id_servico === selected.id_servico) || null);
         }
-      }
-
-      // Se há um serviço de CS ou outro recém-criado, prioriza-o
-      const csService = lista.find(s => s.titulo.toLowerCase().includes('cs'));
-      if (csService) {
-        setServicoSelecionado(csService);
-      } else if (lista.length > 0) {
-        setServicoSelecionado(lista[0]);
-      }
-    });
+      })
+      .catch(error => setErro(error instanceof Error ? error.message : 'Não foi possível carregar os atendimentos concluídos.'));
   }, []);
 
   // Executar análise de sentimento em tempo real (RF10 & RNF02)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (comentario.trim()) {
-        api.analyzeSentiment(comentario, nota).then(res => setAnaliseIA(res));
+        api.analyzeSentiment(comentario, nota)
+          .then(res => setAnaliseIA(res))
+          .catch(error => setErro(error instanceof Error ? error.message : 'Não foi possível classificar o comentário.'));
       }
     }, 150);
     return () => clearTimeout(timer);
@@ -60,23 +57,18 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comentario.trim()) return;
+    if (!comentario.trim() || !agendamentoSelecionado) return;
 
     setSalvando(true);
-    await api.submitReview({
-      id_servico: servicoSelecionado?.id_servico,
-      servico_titulo: servicoSelecionado?.titulo || 'Serviço Geral',
-      nota,
-      comentario,
-      sentimento_predito: analiseIA?.sentimento || (nota >= 3 ? 'Positivo' : 'Negativo')
-    });
-
     try {
+      await api.submitReview({ id_agendamento: agendamentoSelecionado, nota, comentario });
       localStorage.removeItem('agendou_avaliacao_alvo');
-    } catch (_) {}
-
-    setSalvando(false);
-    setEnviado(true);
+      setEnviado(true);
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : 'Não foi possível registrar a avaliação.');
+    } finally {
+      setSalvando(false);
+    }
   };
 
   const handleReset = () => {
@@ -88,12 +80,13 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
   return (
     <div className="max-w-xl mx-auto px-4 py-16">
       <div className="bg-white p-10 border border-stone-300 space-y-8 text-left">
+        {erro && <p role="alert" className="border border-red-300 bg-red-50 p-3 text-sm text-red-800">{erro}</p>}
         
         {/* Cabeçalho */}
         <div className="border-b border-stone-200 pb-5">
           <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Feedback & NLP</span>
           <h1 className="text-2xl font-normal text-stone-900 tracking-tight mt-1">Avaliação do Atendimento (RF09)</h1>
-          <p className="text-xs text-stone-500 font-light mt-1">Classificação de satisfação via aprendizado de máquina supervisionado.</p>
+          <p className="text-xs text-stone-500 font-light mt-1">Classificação de sentimento aplicada aos comentários após a conclusão do atendimento.</p>
         </div>
 
         {!enviado ? (
@@ -105,22 +98,25 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
                 Serviço a Ser Avaliado:
               </label>
               <select
-                value={servicoSelecionado?.id_servico || ''}
+                value={agendamentoSelecionado || ''}
                 onChange={e => {
                   const id = Number(e.target.value);
-                  const encontrado = servicos.find(s => s.id_servico === id);
-                  if (encontrado) setServicoSelecionado(encontrado);
+                  const selected = agendamentosConcluidos.find(appointment => appointment.id_agendamento === id);
+                  if (selected) {
+                    setAgendamentoSelecionado(id);
+                    setServicoSelecionado(servicos.find(service => service.id_servico === selected.id_servico) || null);
+                  }
                 }}
                 className="w-full p-3 bg-pastel-cream border border-stone-300 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-stone-900"
               >
-                {servicos.map(s => (
-                  <option key={s.id_servico} value={s.id_servico}>
-                    {s.titulo} — R$ {s.preco.toFixed(2).replace('.', ',')} ({s.duracao_minutos} min)
+                {agendamentosConcluidos.map(appointment => (
+                  <option key={appointment.id_agendamento} value={appointment.id_agendamento}>
+                    #{appointment.id_agendamento} — {appointment.servico_titulo} ({api.extrairData(appointment.data_hora_inicio)})
                   </option>
                 ))}
               </select>
               <p className="text-[11px] font-mono text-stone-400">
-                Selecione o serviço para vincular o feedback e a classificação de sentimento.
+                Somente atendimentos concluídos e ainda não avaliados podem receber feedback.
               </p>
             </div>
 
@@ -132,11 +128,11 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
                   {servicoSelecionado ? servicoSelecionado.titulo : 'Carregando serviço...'}
                 </p>
                 <p className="text-stone-500 text-[11px] mt-0.5">
-                  {servicoSelecionado ? `${servicoSelecionado.duracao_minutos} min • R$ ${servicoSelecionado.preco.toFixed(2).replace('.', ',')}` : ''} • Concluído em 04/09/2026
+                  {servicoSelecionado ? `${servicoSelecionado.duracao_minutos} min • R$ ${servicoSelecionado.preco.toFixed(2).replace('.', ',')}` : ''} • Concluído em {api.extrairData(agendamentosConcluidos.find(appointment => appointment.id_agendamento === agendamentoSelecionado)?.data_hora_inicio || '')}
                 </p>
               </div>
               <span className="bg-pastel-blue text-pastel-blue-dark px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold border border-pastel-blue-dark/30 self-start sm:self-auto">
-                Concluído
+                {agendamentoSelecionado ? `Atendimento #${agendamentoSelecionado}` : 'Sem atendimento concluído'}
               </span>
             </div>
             
@@ -195,7 +191,7 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
                     <span>Mineração de Dados (NLP)</span>
                   </div>
                   <span className="text-[10px] text-stone-500">
-                    Inferência: {analiseIA.tempoProcessamentoMs}ms (RNF02 OK)
+                    Inferência: {analiseIA.tempoProcessamentoMs}ms ({analiseIA.rnf02_status})
                   </span>
                 </div>
 
@@ -216,7 +212,7 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
 
             <button
               type="submit"
-              disabled={salvando}
+              disabled={salvando || !agendamentoSelecionado}
               className="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs uppercase tracking-wider py-4 border border-stone-900 transition disabled:opacity-50"
             >
               {salvando ? 'Processando Avaliação...' : 'Registrar Avaliação'}
@@ -251,7 +247,7 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
             </div>
 
             <p className="text-xs text-stone-600 font-light leading-relaxed">
-              Sua avaliação foi classificada pelo modelo de Processamento de Linguagem Natural e persistida com sucesso na base de dados analítica.
+              Sua avaliação foi classificada pelo módulo de sentimento da API e persistida no PostgreSQL.
             </p>
 
             <div className="pt-3 flex flex-wrap gap-3 font-mono text-xs">

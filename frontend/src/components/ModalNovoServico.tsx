@@ -15,6 +15,7 @@ export const ModalNovoServico: React.FC<ModalNovoServicoProps> = ({ isOpen, onCl
   const [duracaoMinutos, setDuracaoMinutos] = useState('45');
   const [preco, setPreco] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
 
   if (!isOpen) return null;
 
@@ -23,22 +24,24 @@ export const ModalNovoServico: React.FC<ModalNovoServicoProps> = ({ isOpen, onCl
     if (!titulo || !preco) return;
 
     setSalvando(true);
-    const novo = await api.createService({
-      id_prestador: 1,
-      titulo,
-      descricao,
-      duracao_minutos: parseInt(duracaoMinutos) || 45,
-      preco: parseFloat(preco.replace(',', '.')) || 0
-    });
-
-    setSalvando(false);
-    onServiceCreated(novo);
-    onClose();
-    
-    // Reset form
-    setTitulo('');
-    setDescricao('');
-    setPreco('');
+    setErro('');
+    try {
+      const novo = await api.createService({
+        titulo,
+        descricao,
+        duracao_minutos: parseInt(duracaoMinutos, 10),
+        preco: parseFloat(preco.replace(',', '.'))
+      });
+      onServiceCreated(novo);
+      onClose();
+      setTitulo('');
+      setDescricao('');
+      setPreco('');
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : 'Não foi possível cadastrar o serviço.');
+    } finally {
+      setSalvando(false);
+    }
   };
 
   return (
@@ -59,6 +62,7 @@ export const ModalNovoServico: React.FC<ModalNovoServicoProps> = ({ isOpen, onCl
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
+          {erro && <p role="alert" className="border border-red-300 bg-red-50 p-3 text-red-800">{erro}</p>}
           
           <div>
             <label className="block text-stone-600 font-bold uppercase tracking-wider mb-1.5">

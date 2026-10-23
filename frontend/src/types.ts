@@ -5,6 +5,8 @@ export interface UserProfile {
   nome: string;
   email: string;
   tipo_perfil: UserRole;
+  telefone?: string;
+  endereco?: string;
   nome_negocio?: string;
 }
 
@@ -16,6 +18,8 @@ export interface Service {
   duracao_minutos: number;
   preco: number;
   ativo: boolean;
+  prestador_nome_negocio?: string;
+  prestador_endereco?: string;
 }
 
 export interface Slot {
@@ -31,6 +35,8 @@ export interface Appointment {
   id_servico: number;
   cliente_nome: string;
   cliente_telefone: string;
+  prestador_nome?: string;
+  avaliado?: boolean;
   servico_titulo: string;
   servico_preco: number;
   data_hora_inicio: string;

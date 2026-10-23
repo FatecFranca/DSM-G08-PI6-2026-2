@@ -5,6 +5,9 @@ import { Users, DollarSign, Star, Brain, Check, X, Eye, Plus, Scissors, Clock, C
 import { ModalNovoServico } from '../components/ModalNovoServico';
 import { ModalEditarServico } from '../components/ModalEditarServico';
 
+const today = new Date();
+const todayLocal = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
 interface DashboardProps {
   onNavigate: (page: string) => void;
 }
@@ -14,7 +17,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
   const [agendamentos, setAgendamentos] = useState<Appointment[]>([]);
   const [servicos, setServicos] = useState<Service[]>([]);
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
-  const [filtroData, setFiltroData] = useState<string>('2026-09-04');
+  const [filtroData, setFiltroData] = useState<string>(todayLocal);
   
   // Modais
   const [modalNovoAberto, setModalNovoAberto] = useState<boolean>(false);
@@ -22,11 +25,41 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
   const [servicoEmEdicao, setServicoEmEdicao] = useState<Service | null>(null);
 
   const [mensagemSucesso, setMensagemSucesso] = useState<string>('');
+  const [erro, setErro] = useState('');
+  const [metricas, setMetricas] = useState({ mediaNotas: 0, totalAvaliacoes: 0, taxaSatisfacaoPercentual: 0 });
 
-  const carregarDados = () => {
-    api.getAppointments(1).then(data => setAgendamentos(data));
-    api.getServices().then(data => setServicos(data));
-    setUsuario(api.getCurrentUser());
+  const carregarDados = async () => {
+    const user = api.getCurrentUser();
+    setUsuario(user);
+    if (!localStorage.getItem('agendou_token')) {
+      setErro('Entre com uma conta para consultar os agendamentos.');
+      return;
+    }
+    if (user.tipo_perfil === 'Cliente') {
+      api.getAppointments().then(appointments => {
+        setAgendamentos(appointments);
+        setErro('');
+      }).catch(error => setErro(error instanceof Error ? error.message : 'Não foi possível carregar seus agendamentos.'));
+      return;
+    }
+    if (user.tipo_perfil !== 'Prestador' && user.tipo_perfil !== 'Admin') {
+      setErro('Perfil sem acesso a esta área.');
+      return;
+    }
+    const providerId = user.tipo_perfil === 'Admin' ? 1 : user.id_usuario;
+    try {
+      const [appointments, services, reviews] = await Promise.all([
+        api.getAppointments(providerId),
+        api.getServices(user.tipo_perfil === 'Admin' ? undefined : providerId),
+        api.getProviderReviews(providerId)
+      ]);
+      setAgendamentos(appointments);
+      setServicos(services);
+      setMetricas(reviews);
+      setErro('');
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : 'Não foi possível carregar os dados do painel.');
+    }
   };
 
   useEffect(() => {
@@ -37,12 +70,17 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
   }, []);
 
   const alterarStatus = async (id: number, novoStatus: 'Confirmado' | 'Cancelado' | 'Concluído') => {
-    await api.updateAppointmentStatus(id, novoStatus);
-    setAgendamentos(prev =>
-      prev.map(a => (a.id_agendamento === id ? { ...a, status: novoStatus } : a))
-    );
-    setMensagemSucesso(`Status do agendamento alterado para "${novoStatus}".`);
-    setTimeout(() => setMensagemSucesso(''), 3000);
+    try {
+      await api.updateAppointmentStatus(id, novoStatus);
+      setAgendamentos(prev =>
+        prev.map(a => (a.id_agendamento === id ? { ...a, status: novoStatus } : a))
+      );
+      setMensagemSucesso(`Status do agendamento alterado para "${novoStatus}".`);
+      setErro('');
+      setTimeout(() => setMensagemSucesso(''), 3000);
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : 'Não foi possível atualizar o agendamento.');
+    }
   };
 
   const handleServiceCreated = (novo: Service) => {
@@ -64,13 +102,15 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
     const confirmou = window.confirm(`Deseja realmente excluir o serviço "${servico.titulo}" do catálogo?`);
     if (!confirmou) return;
 
-    await api.deleteService(servico.id_servico);
-    setServicos(prev => prev.filter(s => 
-      s.id_servico !== servico.id_servico && 
-      !(s.titulo.toLowerCase().trim() === servico.titulo.toLowerCase().trim() && s.id_prestador === servico.id_prestador)
-    ));
-    setMensagemSucesso(`Serviço "${servico.titulo}" removido do catálogo.`);
-    setTimeout(() => setMensagemSucesso(''), 4000);
+    try {
+      await api.deleteService(servico.id_servico);
+      setServicos(prev => prev.filter(s => s.id_servico !== servico.id_servico));
+      setMensagemSucesso(`Serviço "${servico.titulo}" removido do catálogo.`);
+      setErro('');
+      setTimeout(() => setMensagemSucesso(''), 4000);
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : 'Não foi possível desativar o serviço.');
+    }
   };
 
   const abrirEdicao = (servico: Service) => {
@@ -82,7 +122,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
   const podeGerenciarServico = (servico: Service) => {
     if (usuario.tipo_perfil === 'Admin') return true;
     if (usuario.tipo_perfil === 'Prestador') {
-      return servico.id_prestador === usuario.id_usuario || servico.id_prestador === 1;
+      return servico.id_prestador === usuario.id_usuario;
     }
     return false;
   };
@@ -110,6 +150,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+      {erro && <p role="alert" className="border border-red-300 bg-red-50 p-4 text-sm text-red-800">{erro}</p>}
       
       {/* Banner de Modo Administrador (Se ativo) */}
       {usuario.tipo_perfil === 'Admin' && (
@@ -134,7 +175,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
         <div>
           <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Módulo Administrativo</span>
           <h1 className="text-3xl font-normal text-stone-900 tracking-tight mt-1">
-            {usuario.tipo_perfil === 'Admin' ? 'Painel de Administração Global' : 'Painel do Prestador (RF11)'}
+            {usuario.tipo_perfil === 'Admin' ? 'Painel de Administração Global' : usuario.tipo_perfil === 'Cliente' ? 'Meus Agendamentos' : 'Painel do Prestador (RF11)'}
           </h1>
           <p className="text-xs text-stone-500 font-light mt-1">
             Conectado como: <strong>{usuario.nome}</strong> ({usuario.tipo_perfil}).
@@ -165,6 +206,8 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
         </div>
       )}
 
+      {usuario.tipo_perfil !== 'Cliente' && (
+      <>
       {/* Cards de Métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-pastel-cream p-6 border border-stone-300 space-y-2">
@@ -194,8 +237,8 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
             <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-stone-500">Avaliação Média</span>
             <Star className="w-4 h-4 text-stone-600" />
           </div>
-          <h3 className="text-3xl font-mono font-light text-stone-900">4.9</h3>
-          <p className="text-[11px] font-mono text-stone-500">128 avaliações de clientes</p>
+          <h3 className="text-3xl font-mono font-light text-stone-900">{metricas.mediaNotas.toFixed(1)}</h3>
+          <p className="text-[11px] font-mono text-stone-500">{metricas.totalAvaliacoes} avaliações registradas</p>
         </div>
 
         <div className="bg-pastel-lavender p-6 border border-pastel-lavender-dark/30 space-y-2">
@@ -203,7 +246,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
             <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-pastel-lavender-dark">Satisfação (NLP)</span>
             <Brain className="w-4 h-4 text-pastel-lavender-dark" />
           </div>
-          <h3 className="text-3xl font-mono font-light text-stone-900">96.4%</h3>
+          <h3 className="text-3xl font-mono font-light text-stone-900">{metricas.taxaSatisfacaoPercentual}%</h3>
           <p className="text-[11px] font-mono text-pastel-lavender-dark font-semibold">Sentimento Positivo</p>
         </div>
       </div>
@@ -283,20 +326,6 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
                         </button>
                       </div>
 
-                      <button
-                        onClick={() => {
-                          localStorage.setItem('agendou_avaliacao_alvo', JSON.stringify({
-                            id_servico: s.id_servico,
-                            servico_titulo: s.titulo
-                          }));
-                          onNavigate('avaliacao');
-                        }}
-                        className="w-full py-1.5 px-2 bg-pastel-lavender hover:bg-pastel-lavender/80 border border-pastel-lavender-dark/30 text-pastel-lavender-dark font-bold uppercase tracking-wider text-[10px] flex items-center justify-center space-x-1.5 transition"
-                        title="Avaliar este serviço com análise de sentimento via IA"
-                      >
-                        <Brain className="w-3 h-3" />
-                        <span>Avaliar com IA (NLP)</span>
-                      </button>
                     </div>
                   )}
                 </div>
@@ -305,6 +334,8 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
           })}
         </div>
       </div>
+      </>
+      )}
 
       {/* Tabela de Agendamentos */}
       <div className="bg-white border border-stone-300 space-y-4">
@@ -312,7 +343,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
         {/* Filtros de Data e Status */}
         <div className="p-6 border-b border-stone-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-bold uppercase tracking-wider text-stone-900">Grade de Agendamentos</h2>
+            <h2 className="text-base font-bold uppercase tracking-wider text-stone-900">{usuario.tipo_perfil === 'Cliente' ? 'Histórico de Agendamentos' : 'Grade de Agendamentos'}</h2>
             <p className="text-xs text-stone-500 font-mono mt-0.5">
               Horários sincronizados 1:1 com os slots de agendamento de clientes.
             </p>
@@ -381,7 +412,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
               <tr className="bg-pastel-cream border-b border-stone-300 text-[11px] font-mono font-bold uppercase tracking-wider text-stone-500">
                 <th className="py-3.5 px-6">Data</th>
                 <th className="py-3.5 px-6">Horário</th>
-                <th className="py-3.5 px-6">Cliente</th>
+                <th className="py-3.5 px-6">{usuario.tipo_perfil === 'Cliente' ? 'Prestador' : 'Cliente'}</th>
                 <th className="py-3.5 px-6">Serviço</th>
                 <th className="py-3.5 px-6">Valor</th>
                 <th className="py-3.5 px-6">Status (RNF06)</th>
@@ -405,8 +436,8 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
                       {api.extrairHora(item.data_hora_inicio)} - {api.extrairHora(item.data_hora_fim)}
                     </td>
                     <td className="py-4 px-6">
-                      <p className="font-bold text-stone-900">{item.cliente_nome}</p>
-                      <p className="text-[11px] font-mono text-stone-400">{item.cliente_telefone}</p>
+                      <p className="font-bold text-stone-900">{usuario.tipo_perfil === 'Cliente' ? item.prestador_nome : item.cliente_nome}</p>
+                      {usuario.tipo_perfil !== 'Cliente' && <p className="text-[11px] font-mono text-stone-400">{item.cliente_telefone}</p>}
                     </td>
                     <td className="py-4 px-6 text-stone-700">{item.servico_titulo}</td>
                     <td className="py-4 px-6 font-mono font-bold text-stone-900">
@@ -418,7 +449,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right space-x-3 font-mono text-xs">
-                      {item.status !== 'Concluído' && (
+                      {usuario.tipo_perfil !== 'Cliente' && item.status !== 'Concluído' && item.status !== 'Cancelado' && (
                         <button
                           onClick={() => alterarStatus(item.id_agendamento, 'Concluído')}
                           className="text-stone-900 hover:text-pastel-sage-dark font-bold underline"
@@ -435,7 +466,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
                           Cancelar
                         </button>
                       )}
-                      {item.status === 'Concluído' && (
+                      {usuario.tipo_perfil === 'Cliente' && item.status === 'Concluído' && (
                         <button
                           onClick={() => {
                             localStorage.setItem('agendou_avaliacao_alvo', JSON.stringify({
