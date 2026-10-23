@@ -1,18 +1,17 @@
-﻿# Estágio de Build
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package*.json tsconfig.json ./
+COPY backend/package*.json backend/tsconfig.json ./
 RUN npm ci
-COPY src/ ./src/
+COPY backend/src ./src
 RUN npm run build
 
-# Estágio de Execução em Nuvem (AWS ECS / Docker)
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package*.json ./
-RUN npm ci --only=production
+COPY backend/package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/dist ./dist
-
+COPY docs/openapi.json /docs/openapi.json
+USER node
 EXPOSE 3000
 CMD ["node", "dist/server.js"]

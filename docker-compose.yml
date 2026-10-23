@@ -1,34 +1,54 @@
-﻿version: '3.8'
-
 services:
-  # Contêiner da API REST (Base para o AWS ECS Fargate)
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: agendou-api-backend
-    ports:
-      - "3000:3000"
-    environment:
-      - PORT=3000
-      - NODE_ENV=production
-    depends_on:
-      - postgres
-    restart: unless-stopped
-
-  # Banco de dados PostgreSQL (Simula o Amazon RDS for PostgreSQL)
   postgres:
     image: postgres:16-alpine
-    container_name: agendou-postgres
     environment:
       POSTGRES_DB: agendou_db
       POSTGRES_USER: agendou_user
-      POSTGRES_PASSWORD: agendou_secure_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_only_change_me}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./docs/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docs/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./docs/seed.dev.sql:/docker-entrypoint-initdb.d/02-seed-dev.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agendou_user -d agendou_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:-postgres://agendou_user:${POSTGRES_PASSWORD:-local_only_change_me}@postgres:5432/agendou_db}
+      DATABASE_SSL: ${DATABASE_SSL:-false}
+      JWT_SECRET: ${JWT_SECRET:?Configure JWT_SECRET no arquivo .env}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080,http://localhost:5173}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
