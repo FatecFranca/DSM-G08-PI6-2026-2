@@ -1,111 +1,74 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../database/db';
+import { pool } from '../database/db';
+import { asyncHandler, authMiddleware, AuthenticatedRequest, authorize } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// RF03 - Listar Serviços (Filtro por prestador opcional)
-router.get('/', (req: Request, res: Response) => {
-  const providerId = req.query.providerId ? parseInt(req.query.providerId as string) : undefined;
-
-  let servicos = db.servicos.filter(s => s.ativo);
-  if (providerId) {
-    servicos = servicos.filter(s => s.id_prestador === providerId);
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
+  const providerId = req.query.providerId ? Number(req.query.providerId) : null;
+  if (providerId !== null && (!Number.isInteger(providerId) || providerId <= 0)) {
+    return res.status(400).json({ error: 'providerId deve ser um número inteiro positivo.' });
   }
-
-  // Deduplicação preventiva por título
-  const mapa = new Map<string, typeof servicos[0]>();
-  servicos.forEach(s => {
-    const chave = `${s.id_prestador}_${s.titulo.toLowerCase().trim()}`;
-    if (!mapa.has(chave)) {
-      mapa.set(chave, s);
-    }
-  });
-
-  const listaFinal = Array.from(mapa.values());
-
-  return res.json({
-    total: listaFinal.length,
-    services: listaFinal
-  });
-});
-
-// RF03 - Cadastrar Novo Serviço (Prestador)
-router.post('/', (req: Request, res: Response) => {
-  const { id_servico, id_prestador, titulo, descricao, duracao_minutos, preco } = req.body;
-
-  if (!id_prestador || !titulo || !duracao_minutos || preco === undefined) {
-    return res.status(400).json({ error: 'Campos obrigatórios: id_prestador, titulo, duracao_minutos, preco' });
-  }
-
-  // Prevenir duplicidade no banco por título para o mesmo prestador
-  const existenteIndex = db.servicos.findIndex(s => 
-    s.id_prestador === Number(id_prestador) && 
-    s.titulo.toLowerCase().trim() === titulo.toLowerCase().trim()
+  const result = await pool.query(
+    `SELECT s.id_servico, s.id_prestador, s.titulo, s.descricao, s.duracao_minutos,
+            s.preco::float8 AS preco, s.ativo, u.nome_negocio AS prestador_nome_negocio,
+            u.endereco AS prestador_endereco
+     FROM servicos s JOIN usuarios u ON u.id_usuario=s.id_prestador
+     WHERE s.ativo = TRUE AND ($1::integer IS NULL OR s.id_prestador = $1)
+     ORDER BY u.nome_negocio, s.titulo`,
+    [providerId]
   );
+  return res.json({ total: result.rowCount, services: result.rows });
+}));
 
-  if (existenteIndex !== -1) {
-    db.servicos[existenteIndex].ativo = true;
-    db.servicos[existenteIndex].preco = Number(preco);
-    db.servicos[existenteIndex].duracao_minutos = Number(duracao_minutos);
-    if (descricao) db.servicos[existenteIndex].descricao = descricao;
-    return res.status(200).json({
-      message: 'Serviço já existente atualizado no catálogo.',
-      service: db.servicos[existenteIndex]
-    });
+router.post('/', authMiddleware, authorize('Prestador', 'Admin'), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const { titulo, descricao, duracao_minutos, preco } = req.body;
+  const providerId = req.user.tipo_perfil === 'Admin' ? Number(req.body.id_prestador || req.user.id_usuario) : req.user.id_usuario;
+  if (typeof titulo !== 'string' || !titulo.trim() ||
+      (descricao !== undefined && typeof descricao !== 'string') ||
+      !Number.isInteger(Number(duracao_minutos)) || Number(duracao_minutos) <= 0 ||
+      !Number.isFinite(Number(preco)) || Number(preco) < 0) {
+    return res.status(400).json({ error: 'Informe título, duração positiva e preço não negativo.' });
   }
+  const result = await pool.query(
+    `INSERT INTO servicos (id_prestador, titulo, descricao, duracao_minutos, preco)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id_servico, id_prestador, titulo, descricao, duracao_minutos, preco::float8 AS preco, ativo`,
+    [providerId, titulo.trim(), descricao?.trim() || '', Number(duracao_minutos), Number(preco)]
+  );
+  return res.status(201).json({ message: 'Serviço cadastrado com sucesso.', service: result.rows[0] });
+}));
 
-  const maxId = db.servicos.reduce((max, s) => (s.id_servico < 1000000 ? Math.max(max, s.id_servico) : max), 0);
-  const novoId = maxId + 1;
-
-  const novoServico = {
-    id_servico: (id_servico && Number(id_servico) < 1000000) ? Number(id_servico) : novoId,
-    id_prestador: Number(id_prestador),
-    titulo: titulo.trim(),
-    descricao: descricao ? descricao.trim() : '',
-    duracao_minutos: Number(duracao_minutos),
-    preco: Number(preco),
-    ativo: true
-  };
-
-  db.servicos.push(novoServico);
-  return res.status(201).json({
-    message: 'Serviço cadastrado com sucesso!',
-    service: novoServico
-  });
-});
-
-// RF03 - Atualizar Serviço
-router.put('/:id', (req: Request, res: Response) => {
-  const id = parseInt(req.params.id);
-  const index = db.servicos.findIndex(s => s.id_servico === id);
-
-  if (index === -1) {
-    return res.status(404).json({ error: 'Serviço não encontrado.' });
+router.put('/:id', authMiddleware, authorize('Prestador', 'Admin'), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const { titulo, descricao, duracao_minutos, preco } = req.body;
+  if (!Number.isInteger(id) || id <= 0 || typeof titulo !== 'string' || !titulo.trim() ||
+      (descricao !== undefined && typeof descricao !== 'string') ||
+      !Number.isInteger(Number(duracao_minutos)) || Number(duracao_minutos) <= 0 ||
+      !Number.isFinite(Number(preco)) || Number(preco) < 0) {
+    return res.status(400).json({ error: 'Dados inválidos para atualização do serviço.' });
   }
+  const params = [id, titulo.trim(), descricao?.trim() || '', Number(duracao_minutos), Number(preco), req.user.id_usuario, req.user.tipo_perfil === 'Admin'];
+  const result = await pool.query(
+    `UPDATE servicos SET titulo=$2, descricao=$3, duracao_minutos=$4, preco=$5, atualizado_em=NOW()
+     WHERE id_servico=$1 AND (id_prestador=$6 OR $7)
+     RETURNING id_servico, id_prestador, titulo, descricao, duracao_minutos, preco::float8 AS preco, ativo`,
+    params
+  );
+  if (!result.rowCount) return res.status(404).json({ error: 'Serviço não encontrado ou sem permissão.' });
+  return res.json({ message: 'Serviço atualizado.', service: result.rows[0] });
+}));
 
-  db.servicos[index] = {
-    ...db.servicos[index],
-    ...req.body,
-    id_servico: id
-  };
-
-  return res.json({
-    message: 'Serviço atualizado com sucesso!',
-    service: db.servicos[index]
-  });
-});
-
-// RF03 - Desativar / Excluir Serviço
-router.delete('/:id', (req: Request, res: Response) => {
-  const id = parseInt(req.params.id);
-  const index = db.servicos.findIndex(s => s.id_servico === id);
-
-  if (index === -1) {
-    return res.status(404).json({ error: 'Serviço não encontrado.' });
-  }
-
-  db.servicos[index].ativo = false;
-  return res.json({ message: 'Serviço desativado com sucesso!' });
-});
+router.delete('/:id', authMiddleware, authorize('Prestador', 'Admin'), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'ID de serviço inválido.' });
+  const result = await pool.query(
+    `UPDATE servicos SET ativo=FALSE, atualizado_em=NOW()
+     WHERE id_servico=$1 AND (id_prestador=$2 OR $3) AND ativo=TRUE RETURNING id_servico`,
+    [id, req.user.id_usuario, req.user.tipo_perfil === 'Admin']
+  );
+  if (!result.rowCount) return res.status(404).json({ error: 'Serviço não encontrado ou sem permissão.' });
+  return res.json({ message: 'Serviço desativado com sucesso.' });
+}));
 
 export default router;

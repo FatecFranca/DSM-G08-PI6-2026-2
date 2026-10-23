@@ -2,7 +2,7 @@
 -- PROJETO INTERDISCIPLINAR (PI) – 6º SEMESTRE
 -- MODELO DE BANCO DE DADOS LÓGICO / DDL
 -- Sistema de Agendamento de Serviços Multiplataforma
--- Compatível com: PostgreSQL 14+ e SQLite3
+-- Compatível com PostgreSQL 14+
 -- ====================================================================
 
 -- 1. Tabela: USUARIO
@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     foto_perfil VARCHAR(255),
     nome_negocio VARCHAR(120),    -- Específico para prestadores (RF02)
     endereco VARCHAR(200),        -- Específico para prestadores (RF02)
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 2. Tabela: SERVICO
@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS servicos (
     duracao_minutos INT NOT NULL CHECK (duracao_minutos > 0),
     preco DECIMAL(10, 2) NOT NULL CHECK (preco >= 0),
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_servico_prestador FOREIGN KEY (id_prestador) 
         REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
@@ -61,13 +61,13 @@ CREATE TABLE IF NOT EXISTS agendamentos (
     id_cliente INT NOT NULL,
     id_prestador INT NOT NULL,
     id_servico INT NOT NULL,
-    data_hora_inicio TIMESTAMP NOT NULL,
-    data_hora_fim TIMESTAMP NOT NULL,
+    data_hora_inicio TIMESTAMPTZ NOT NULL,
+    data_hora_fim TIMESTAMPTZ NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'Pendente' 
         CHECK (status IN ('Pendente', 'Confirmado', 'Cancelado', 'Concluído')),
     observacoes TEXT,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_agendamento_cliente FOREIGN KEY (id_cliente) 
         REFERENCES usuarios(id_usuario) ON DELETE RESTRICT,
     CONSTRAINT fk_agendamento_prestador FOREIGN KEY (id_prestador) 
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS avaliacoes (
     nota INT NOT NULL CHECK (nota BETWEEN 1 AND 5),
     comentario TEXT,
     sentimento_predito VARCHAR(15) CHECK (sentimento_predito IN ('Positivo', 'Negativo')),
-    data_avaliacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_avaliacao TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_avaliacao_agendamento FOREIGN KEY (id_agendamento) 
         REFERENCES agendamentos(id_agendamento) ON DELETE CASCADE
 );

@@ -1,38 +1,69 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    id_usuario: number;
-    email: string;
-    tipo_perfil: 'Cliente' | 'Prestador' | 'Admin';
+export type UserRole = 'Cliente' | 'Prestador' | 'Admin';
+
+declare global {
+  namespace Express {
+    interface Request {
+      user: {
+        id_usuario: number;
+        email: string;
+        tipo_perfil: UserRole;
+      };
+    }
+  }
+}
+
+export type AuthenticatedRequest = Request;
+
+export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Token de autenticação ausente ou inválido.' });
+    return;
+  }
+
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    res.status(500).json({ error: 'JWT_SECRET não configurado no servidor.' });
+    return;
+  }
+
+  try {
+    const payload = jwt.verify(authHeader.slice(7), secret) as JwtPayload;
+    if (
+      typeof payload.id_usuario !== 'number' ||
+      typeof payload.email !== 'string' ||
+      !['Cliente', 'Prestador', 'Admin'].includes(payload.tipo_perfil)
+    ) {
+      res.status(401).json({ error: 'Token inválido.' });
+      return;
+    }
+
+    req.user = {
+      id_usuario: payload.id_usuario,
+      email: payload.email,
+      tipo_perfil: payload.tipo_perfil as UserRole
+    };
+    next();
+  } catch {
+    res.status(401).json({ error: 'Token inválido ou expirado.' });
+  }
+}
+
+export function authorize(...roles: UserRole[]): RequestHandler {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.tipo_perfil)) {
+      return res.status(403).json({ error: 'Seu perfil não tem permissão para esta operação.' });
+    }
+    return next();
   };
 }
 
-// Middleware simplificado de autenticação JWT para a Sprint 1 (RNF04)
-export function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
+type AsyncRoute = (req: Request, res: Response, next: NextFunction) => Promise<unknown>;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      error: 'Acesso não autorizado',
-      message: 'Token de autenticação ausente ou inválido. Utilize o cabeçalho Authorization: Bearer <token>'
-    });
-  }
-
-  const token = authHeader.split(' ')[1];
-
-  // Simulação de verificação de token para Sprint 1
-  if (token === 'mock-token-cliente') {
-    req.user = { id_usuario: 2, email: 'cliente@exemplo.com', tipo_perfil: 'Cliente' };
-    return next();
-  }
-
-  if (token === 'mock-token-prestador') {
-    req.user = { id_usuario: 1, email: 'prestador@exemplo.com', tipo_perfil: 'Prestador' };
-    return next();
-  }
-
-  // Token genérico válido
-  req.user = { id_usuario: 1, email: 'prestador@exemplo.com', tipo_perfil: 'Prestador' };
-  next();
-}
+export const asyncHandler = (handler: AsyncRoute): RequestHandler =>
+  (req, res, next) => {
+    void handler(req, res, next).catch(next);
+  };

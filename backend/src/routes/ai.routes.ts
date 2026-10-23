@@ -7,11 +7,15 @@ const router = Router();
 router.post('/sentiment-analysis', (req: Request, res: Response) => {
   const { texto, nota } = req.body;
 
-  if (!texto) {
+  if (typeof texto !== 'string' || !texto.trim()) {
     return res.status(400).json({ error: 'Parâmetro obrigatório: texto (comentário a ser classificado)' });
   }
 
-  const resultado = analisarSentimento(texto, nota ? Number(nota) : undefined);
+  const notaNum = nota === undefined || nota === null ? undefined : Number(nota);
+  if (notaNum !== undefined && (!Number.isInteger(notaNum) || notaNum < 1 || notaNum > 5)) {
+    return res.status(400).json({ error: 'nota deve ser um número inteiro entre 1 e 5.' });
+  }
+  const resultado = analisarSentimento(texto, notaNum);
 
   return res.json({
     input: {

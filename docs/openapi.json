@@ -1,0 +1,202 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Agendou! API",
+    "version": "1.0.0",
+    "description": "API REST do sistema de agendamento de serviços. Datas são ISO 8601; horários de atendimento usam America/Sao_Paulo."
+  },
+  "servers": [
+    { "url": "/", "description": "Origem atual (API direta ou proxy reverso)" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "ServiceInput": {
+        "type": "object",
+        "required": ["titulo", "duracao_minutos", "preco"],
+        "properties": {
+          "id_prestador": { "type": "integer", "description": "Obrigatório apenas para administrador." },
+          "titulo": { "type": "string" },
+          "descricao": { "type": "string" },
+          "duracao_minutos": { "type": "integer", "minimum": 1 },
+          "preco": { "type": "number", "minimum": 0 }
+        }
+      },
+      "AppointmentInput": {
+        "type": "object",
+        "required": ["id_prestador", "id_servico", "data_hora_inicio"],
+        "properties": {
+          "id_cliente": { "type": "integer", "description": "Obrigatório apenas para administrador; para cliente é obtido pelo JWT." },
+          "id_prestador": { "type": "integer" },
+          "id_servico": { "type": "integer" },
+          "data_hora_inicio": { "type": "string", "format": "date-time", "description": "ISO 8601, horário local America/Sao_Paulo com offset." },
+          "observacoes": { "type": "string" }
+        }
+      },
+      "ScheduleInput": {
+        "type": "object",
+        "required": ["dia_semana", "hora_inicio", "hora_fim"],
+        "properties": {
+          "id_prestador": { "type": "integer", "description": "Obrigatório apenas para administrador." },
+          "dia_semana": { "type": "integer", "minimum": 0, "maximum": 6 },
+          "hora_inicio": { "type": "string", "example": "09:00" },
+          "hora_fim": { "type": "string", "example": "18:00" },
+          "inicio_intervalo": { "type": "string", "example": "12:00" },
+          "fim_intervalo": { "type": "string", "example": "13:00" }
+        }
+      },
+      "ReviewInput": {
+        "type": "object",
+        "required": ["id_agendamento", "nota", "comentario"],
+        "properties": {
+          "id_agendamento": { "type": "integer" },
+          "nota": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "comentario": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Verifica API e conexão com PostgreSQL",
+        "responses": {
+          "200": { "description": "API e banco disponíveis" },
+          "503": { "description": "Banco indisponível" }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Cadastra cliente ou prestador",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["nome", "email", "senha", "telefone", "tipo_perfil"], "properties": { "nome": { "type": "string" }, "email": { "type": "string", "format": "email" }, "senha": { "type": "string", "minLength": 8 }, "telefone": { "type": "string" }, "tipo_perfil": { "type": "string", "enum": ["Cliente", "Prestador"] }, "nome_negocio": { "type": "string" }, "endereco": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Conta criada e JWT emitido" }, "409": { "description": "E-mail já cadastrado" } }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Autentica usuário",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["email", "senha"], "properties": { "email": { "type": "string" }, "senha": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Usuário e JWT" }, "401": { "description": "Credenciais inválidas" } }
+      }
+    },
+    "/api/auth/profile/{id}": {
+      "get": {
+        "summary": "Consulta perfil autenticado",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Perfil sem senha" }, "401": { "description": "Não autenticado" } }
+      },
+      "patch": {
+        "summary": "Atualiza dados pessoais ou do negócio",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Perfil atualizado" }, "403": { "description": "Sem permissão" } }
+      }
+    },
+    "/api/services": {
+      "get": {
+        "summary": "Lista serviços ativos",
+        "parameters": [{ "name": "providerId", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Catálogo de serviços" } }
+      },
+      "post": {
+        "summary": "Cria serviço (prestador/admin)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ServiceInput" } } } },
+        "responses": { "201": { "description": "Serviço persistido" }, "403": { "description": "Perfil sem permissão" } }
+      }
+    },
+    "/api/services/{id}": {
+      "put": {
+        "summary": "Atualiza serviço",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ServiceInput" } } } },
+        "responses": { "200": { "description": "Serviço atualizado" }, "404": { "description": "Não encontrado" } }
+      },
+      "delete": {
+        "summary": "Desativa serviço",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Serviço desativado" } }
+      }
+    },
+    "/api/schedule/{providerId}": {
+      "get": {
+        "summary": "Consulta jornada do prestador",
+        "parameters": [{ "name": "providerId", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Jornada semanal" } }
+      }
+    },
+    "/api/schedule": {
+      "post": {
+        "summary": "Cria ou atualiza jornada (prestador/admin)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ScheduleInput" } } } },
+        "responses": { "201": { "description": "Jornada persistida" } }
+      }
+    },
+    "/api/appointments/available-slots": {
+      "get": {
+        "summary": "Calcula horários livres",
+        "parameters": [
+          { "name": "providerId", "in": "query", "required": true, "schema": { "type": "integer" } },
+          { "name": "serviceId", "in": "query", "required": true, "schema": { "type": "integer" } },
+          { "name": "date", "in": "query", "required": true, "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": { "200": { "description": "Slots sem sobreposição" } }
+      }
+    },
+    "/api/appointments": {
+      "get": {
+        "summary": "Lista agenda própria ou filtrada por administrador",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "Agendamentos e dados relacionados" } }
+      },
+      "post": {
+        "summary": "Cria agendamento sem conflito para o prestador",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppointmentInput" } } } },
+        "responses": { "201": { "description": "Agendamento salvo" }, "409": { "description": "Horário indisponível" } }
+      }
+    },
+    "/api/appointments/{id}/status": {
+      "patch": {
+        "summary": "Altera status conforme perfil",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["status"], "properties": { "status": { "type": "string", "enum": ["Pendente", "Confirmado", "Cancelado", "Concluído"] } } } } } },
+        "responses": { "200": { "description": "Status atualizado" }, "403": { "description": "Sem permissão" } }
+      }
+    },
+    "/api/reviews": {
+      "post": {
+        "summary": "Avalia atendimento concluído e classifica sentimento",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReviewInput" } } } },
+        "responses": { "201": { "description": "Avaliação persistida" }, "409": { "description": "Atendimento não concluído ou já avaliado" } }
+      }
+    },
+    "/api/reviews/provider/{providerId}": {
+      "get": {
+        "summary": "Consulta avaliações e métricas do prestador",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "providerId", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Métricas de sentimento e avaliações" } }
+      }
+    },
+    "/api/ai/sentiment-analysis": {
+      "post": {
+        "summary": "Classifica sentimento em comentário",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["texto"], "properties": { "texto": { "type": "string" }, "nota": { "type": "integer", "minimum": 1, "maximum": 5 } } } } } },
+        "responses": { "200": { "description": "Rótulo, confiança e latência" } }
+      }
+    }
+  }
+}

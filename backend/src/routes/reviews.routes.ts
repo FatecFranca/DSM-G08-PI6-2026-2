@@ -1,81 +1,79 @@
-import { Router, Request, Response } from 'express';
-import { db, Avaliacao } from '../database/db';
+import { Router, Response } from 'express';
+import { pool } from '../database/db';
+import { asyncHandler, authMiddleware, AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { analisarSentimento } from '../services/sentiment.service';
 
 const router = Router();
 
-// RF09 & RF10 - Enviar Avaliação com Análise de Sentimento Automática (RNF02 < 1s)
-router.post('/', (req: Request, res: Response) => {
-  const { id_agendamento, id_servico, nota, comentario } = req.body;
+router.post('/', authMiddleware, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const { id_agendamento, nota, comentario } = req.body;
+  const appointmentId = Number(id_agendamento);
+  const score = Number(nota);
+  if (!Number.isInteger(appointmentId) || appointmentId <= 0 || !Number.isInteger(score) || score < 1 || score > 5 || typeof comentario !== 'string' || !comentario.trim()) {
+    return res.status(400).json({ error: 'Informe id_agendamento, nota inteira de 1 a 5 e comentário.' });
+  }
+  if (req.user.tipo_perfil !== 'Cliente') return res.status(403).json({ error: 'Somente clientes podem avaliar atendimentos.' });
 
-  if (nota === undefined) {
-    return res.status(400).json({ error: 'Campo obrigatório: nota (1 a 5)' });
+  const appointment = await pool.query(
+    'SELECT id_cliente, status FROM agendamentos WHERE id_agendamento=$1',
+    [appointmentId]
+  );
+  if (!appointment.rowCount || appointment.rows[0].id_cliente !== req.user.id_usuario) {
+    return res.status(404).json({ error: 'Agendamento não encontrado para este cliente.' });
+  }
+  if (appointment.rows[0].status !== 'Concluído') {
+    return res.status(409).json({ error: 'A avaliação só pode ser enviada após a conclusão do atendimento.' });
   }
 
-  const notaNum = parseInt(nota);
-  if (isNaN(notaNum) || notaNum < 1 || notaNum > 5) {
-    return res.status(400).json({ error: 'A nota deve ser um valor inteiro entre 1 e 5.' });
-  }
-
-  const agendamentoIdNum = id_agendamento ? Number(id_agendamento) : 1;
-
-  // RF10: Análise de sentimento automática
-  const analise = analisarSentimento(comentario || '', notaNum);
-
-  const novaAvaliacao: Avaliacao = {
-    id_avaliacao: db.avaliacoes.length + 1,
-    id_agendamento: agendamentoIdNum,
-    nota: notaNum,
-    comentario: comentario || '',
-    sentimento_predito: analise.sentimento,
-    data_avaliacao: new Date().toISOString()
-  };
-
-  db.avaliacoes.push(novaAvaliacao);
-
-  return res.status(201).json({
-    message: 'Avaliação enviada e analisada com sucesso!',
-    review: novaAvaliacao,
-    aiAnalysis: {
-      sentimento: analise.sentimento,
-      confianca: analise.confianca,
-      tempoProcessamentoMs: analise.tempoProcessamentoMs,
-      rnf02_status: analise.tempoProcessamentoMs < 1000 ? 'ATENDIDO (< 1s)' : 'VIOLADO'
+  const analysis = analisarSentimento(comentario.trim(), score);
+  try {
+    const result = await pool.query(
+      `INSERT INTO avaliacoes (id_agendamento, nota, comentario, sentimento_predito)
+       VALUES ($1,$2,$3,$4)
+       RETURNING id_avaliacao, id_agendamento, nota, comentario, sentimento_predito, data_avaliacao`,
+      [appointmentId, score, comentario.trim(), analysis.sentimento]
+    );
+    return res.status(201).json({
+      message: 'Avaliação registrada e classificada.',
+      review: result.rows[0],
+      aiAnalysis: {
+        sentimento: analysis.sentimento,
+        confianca: analysis.confianca,
+        tempoProcessamentoMs: analysis.tempoProcessamentoMs,
+        rnf02_status: analysis.tempoProcessamentoMs < 1000 ? 'ATENDIDO (< 1s)' : 'VIOLADO'
+      }
+    });
+  } catch (error) {
+    if ((error as { code?: string }).code === '23505') {
+      return res.status(409).json({ error: 'Este atendimento já possui uma avaliação.' });
     }
-  });
-});
+    throw error;
+  }
+}));
 
-// RF11 - Obter Avaliações e Métricas do Prestador para o Dashboard
-router.get('/provider/:providerId', (req: Request, res: Response) => {
-  const providerId = parseInt(req.params.providerId);
-
-  // Buscar todos os agendamentos deste prestador
-  const agendamentosPrestador = db.agendamentos.filter(a => a.id_prestador === providerId);
-  const idsAgendamentos = new Set(agendamentosPrestador.map(a => a.id_agendamento));
-
-  // Buscar avaliações associadas
-  const avaliacoesPrestador = db.avaliacoes.filter(av => idsAgendamentos.has(av.id_agendamento));
-
-  const total = avaliacoesPrestador.length;
-  const mediaNotas = total > 0 
-    ? parseFloat((avaliacoesPrestador.reduce((acc, curr) => acc + curr.nota, 0) / total).toFixed(1))
-    : 5.0;
-
-  const totalPositivas = avaliacoesPrestador.filter(a => a.sentimento_predito === 'Positivo').length;
-  const totalNegativas = avaliacoesPrestador.filter(a => a.sentimento_predito === 'Negativo').length;
-  const taxaSatisfacao = total > 0 ? Math.round((totalPositivas / total) * 100) : 100;
-
+router.get('/provider/:providerId', authMiddleware, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const providerId = Number(req.params.providerId);
+  if (!Number.isInteger(providerId) || providerId <= 0) return res.status(400).json({ error: 'providerId inválido.' });
+  if (req.user.tipo_perfil !== 'Admin' && (req.user.tipo_perfil !== 'Prestador' || req.user.id_usuario !== providerId)) {
+    return res.status(403).json({ error: 'Você só pode consultar as métricas do próprio estabelecimento.' });
+  }
+  const result = await pool.query(
+    `SELECT r.id_avaliacao, r.id_agendamento, r.nota, r.comentario, r.sentimento_predito, r.data_avaliacao
+     FROM avaliacoes r JOIN agendamentos a ON a.id_agendamento=r.id_agendamento
+     WHERE a.id_prestador=$1 ORDER BY r.data_avaliacao DESC`,
+    [providerId]
+  );
+  const reviews = result.rows;
+  const total = reviews.length;
+  const positive = reviews.filter(review => review.sentimento_predito === 'Positivo').length;
   return res.json({
     providerId,
     totalAvaliacoes: total,
-    mediaNotas,
-    taxaSatisfacaoPercentual: taxaSatisfacao,
-    sentimentos: {
-      positivas: totalPositivas,
-      negativas: totalNegativas
-    },
-    reviews: avaliacoesPrestador
+    mediaNotas: total ? Number((reviews.reduce((sum, review) => sum + Number(review.nota), 0) / total).toFixed(1)) : 0,
+    taxaSatisfacaoPercentual: total ? Math.round(positive / total * 100) : 0,
+    sentimentos: { positivas: positive, negativas: total - positive },
+    reviews
   });
-});
+}));
 
 export default router;
