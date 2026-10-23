@@ -4,13 +4,13 @@
 **Disciplina-Satélite:** Computação em Nuvem II  
 **Professor Responsável:** Prof. Me. Alexandre Gomes  
 **Tema:** Sistema de Agendamento de Serviços Multiplataforma  
-**1ª Sprint:** Definição e justificativa dos serviços em nuvem a serem utilizados
+**Atualização em 23/10/2026:** arquitetura AWS planejada; ainda não há evidência de recursos AWS provisionados neste repositório.
 
 ---
 
 ## 1. Visão Geral da Arquitetura em Nuvem
 
-Para atender aos requisitos de alta disponibilidade (**RNF08**), tempo de resposta ágil (**RNF01** e **RNF02**) e segurança rigorosa com criptografia (**RNF03** e **RNF04**), foi selecionada a plataforma de nuvem pública **AWS (Amazon Web Services)**, complementada por serviços de borda e orquestração de contêineres Docker.
+Para atender aos requisitos de alta disponibilidade (**RNF08**), tempo de resposta ágil (**RNF01** e **RNF02**) e segurança rigorosa com criptografia (**RNF03** e **RNF04**), foi selecionada como arquitetura-alvo a plataforma de nuvem pública **AWS (Amazon Web Services)**, complementada por serviços de borda e orquestração de contêineres Docker. A seleção é planejamento; não significa que esses recursos já estejam criados.
 
 A arquitetura em nuvem é orientada a microsserviços desacoplados e *serverless/containers*, reduzindo custos operacionais durante a fase inicial e permitindo escalabilidade automática sob demanda.
 
@@ -104,4 +104,18 @@ flowchart TB
 
 ## 5. Planejamento de Custos e Ambiente Educacional
 
-Durante as Sprints 1 e 2, o ambiente utilizará o nível de gratuidade da AWS (*AWS Free Tier*), podendo também ser testado em plataformas PaaS alternativas de baixo custo para desenvolvimento ágil, como **Render** (para containers Docker) e **Supabase / Neon** (para PostgreSQL gerenciado), mantendo 100% de compatibilidade com a arquitetura final da 3ª Sprint.
+O [`docker-compose.yml`](../docker-compose.yml) fornece ambiente local integrado com PostgreSQL, API e front-end. Para a Sprint 3, a equipe precisa provisionar e comprovar o ambiente na AWS, depois de avaliar preços vigentes e limites da conta. O Free Tier varia por serviço, região e data; não assuma que ele torna o ambiente Multi-AZ gratuito.
+
+### 5.1 Checklist de publicação e validação da Sprint 3
+
+- [ ] Criar VPC, sub-redes públicas/privadas e grupos de segurança com menor privilégio.
+- [ ] Publicar imagens da API e do front-end em registry privado; executar API em ECS Fargate atrás de ALB.
+- [ ] Criar RDS PostgreSQL em sub-redes privadas, configurar backups e testar restauração.
+- [ ] Aplicar schema/migrações de forma controlada; não executar `seed.dev.sql` em produção.
+- [ ] Guardar `DATABASE_URL` e `JWT_SECRET` no Secrets Manager; emitir HTTPS e restringir origens CORS ao domínio publicado.
+- [ ] Configurar health checks, logs, métricas e alertas no CloudWatch; registrar evidência de operação e latência.
+- [ ] Configurar DNS/CloudFront/S3 se adotados, política de cache e invalidação de artefatos.
+- [ ] Testar fluxo completo, concorrência de agendamento, cancelamento, avaliação e recuperação de falhas.
+- [ ] Registrar URLs, arquitetura efetivamente criada, custos estimados/observados, controles e capturas de tela no relatório final.
+
+Não marque esses itens como concluídos até que o grupo os tenha aplicado e validado em sua própria conta AWS.

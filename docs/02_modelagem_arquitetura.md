@@ -2,7 +2,7 @@
 
 **Projeto Interdisciplinar (PI) – 6º Semestre**  
 **Tema:** Sistema de Agendamento de Serviços Multiplataforma  
-**1ª Sprint:** Modelagem inicial (Casos de Uso, Arquitetura e Sequência)
+**Status:** diagramas atualizados para refletir os fluxos implementados; implantação AWS e classificador TF-IDF integrado permanecem planejados.
 
 ---
 
@@ -162,7 +162,7 @@ flowchart LR
 | **UC07** | Validar Anti-Double Booking | Sistema | `<<include>>` | Bloqueio automático de concorrência que impede agendamentos simultâneos. | RF07, RNF01 |
 | **UC08** | Gerenciar Status do Agendamento | Cliente, Prestador | Primário | Mudança de estados semafóricos (Pendente ➔ Confirmado ➔ Cancelado ➔ Concluído). | RF08, RNF06 |
 | **UC09** | Submeter Avaliação do Atendimento | Cliente | Primário | Atribuição de nota de 1 a 5 estrelas e comentário em texto natural após a conclusão. | RF09 |
-| **UC10** | Classificar Sentimento NLP | Sistema de IA | `<<trigger>>` | Processamento TF-IDF e classificação estatística em tempo real (< 10ms). | RF10, RNF02, RNF03 |
+| **UC10** | Classificar Sentimento NLP | Sistema de IA | `<<trigger>>` | A API usa atualmente um baseline lexical; o classificador TF-IDF do script offline ainda não foi integrado. | RF10, RNF02, RNF03 |
 | **UC11** | Visualizar Dashboard e Métricas | Prestador | Primário | Indicadores visuais de volume de atendimentos e satisfação líquida dos clientes. | RF11 |
 | **UC12** | Administrar Parâmetros Globais | Administrador | Primário | Gestão da infraestrutura, bloqueio de contas irregulares e auditoria do sistema. | RF12 |
 
@@ -170,7 +170,7 @@ flowchart LR
 
 ## 2. Diagrama de Arquitetura da Solução
 
-O sistema adota uma arquitetura em camadas desacoplada e baseada em microsserviços/módulos RESTful, com separação estrita entre front-end, lógica de negócios, camada de persistência e módulo analítico de inteligência artificial.
+O sistema utiliza uma arquitetura em camadas, com front-end web, API REST em Node.js/Express, persistência PostgreSQL e classificação lexical de sentimento executada pela API. A implantação AWS e a integração do modelo TF-IDF treinado permanecem como etapas futuras.
 
 ```mermaid
 flowchart TD
@@ -243,7 +243,8 @@ sequenceDiagram
     
     rect rgb(240, 248, 255)
         Note over API,DB: Algoritmo Anti-Sobreposição (RF07) em Transação
-        API->>DB: SELECT COUNT(*) FROM agendamentos WHERE id_prestador = :p AND status != 'Cancelado' AND NOT (data_hora_fim <= :inicio OR data_hora_inicio >= :fim) FOR UPDATE
+        API->>DB: BEGIN; advisory lock pelo ID do prestador
+        API->>DB: Consulta intervalos ativos que se sobrepõem
         alt Existe sobreposição (Double-booking detectado)
             DB-->>API: count > 0
             API-->>Front: HTTP 409 Conflict ("Horário não mais disponível")
@@ -251,6 +252,7 @@ sequenceDiagram
         else Horário Livre Confirmado
             DB-->>API: count == 0
             API->>DB: INSERT INTO agendamentos (...) VALUES (...)
+            API->>DB: COMMIT
             DB-->>API: Retorna agendamento criado (id_agendamento)
             API-->>Front: HTTP 201 Created (Dados do Agendamento)
             Front-->>Cliente: Exibe confirmação de sucesso com status 'Confirmado'
@@ -276,7 +278,7 @@ sequenceDiagram
     Cliente->>Front: Submete avaliação: Nota (5) + Comentário ("Atendimento excelente e pontual!")
     Front->>API: POST /api/reviews { id_agendamento, nota: 5, comentario: "..." }
     API->>IA: Classifica sentimento (comentário)
-    Note over IA: Pré-processamento, TF-IDF e classificação em < 1s (RNF02)
+    Note over IA: Baseline lexical síncrono; o modelo TF-IDF offline ainda não está integrado
     IA-->>API: Resultado: "Positivo" (Score: 0.96)
     API->>DB: INSERT INTO avaliacoes (id_agendamento, nota, comentario, sentimento_predito, data)
     DB-->>API: Registro salvo com sucesso

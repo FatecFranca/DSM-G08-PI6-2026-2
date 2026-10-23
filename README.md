@@ -1,151 +1,107 @@
-# DSM-G08-PI6-2026-2: Sistema de Agendamento de Serviços Multiplataforma
+# Agendou! — Projeto Interdisciplinar DSM 2026/2
 
-Repositório do **GRUPO 08** do Projeto Interdisciplinar do 6º semestre DSM 2026/2.  
-**Integrantes:** Hugo Castro e Pablo Miguel
+Sistema multiplataforma de agendamento de serviços, desenvolvido pelo Grupo 08 do Projeto Interdisciplinar do 6º semestre de DSM (2026/2).
 
-[![Sprint 1](https://img.shields.io/badge/Sprint-1%C2%AA%20Sprint%20(04%2F09%2F2026)-success?style=for-the-badge)](docs/01_escopo_e_requisitos.md)
-[![Status](https://img.shields.io/badge/Status-100%25%20Entregue-blue?style=for-the-badge)](README.md)
-[![Stack](https://img.shields.io/badge/Stack-Node.js%20%7C%20TypeScript%20%7C%20PostgreSQL%20%7C%20TailwindCSS%20%7C%20Python%20NLP-informational?style=for-the-badge)](backend/)
+**Integrantes:** Hugo Castro e Pablo Miguel.
 
-> **Projeto Interdisciplinar (PI) – 6º Semestre**  
-> **Curso:** Tecnologia em Desenvolvimento de Software Multiplataforma  
-> **Disciplina-chave:** Laboratório de Desenvolvimento Multiplataforma  
-> **Disciplinas-satélite:** Computação em Nuvem II & Mineração de Dados  
-> **Professor Responsável:** Prof. Me. Alexandre Gomes  
-> **Data de Entrega da 1ª Sprint:** 04/09/2026  
-> **Link do Protótipo (Canva):** [Prototipação Visual de Interfaces](https://www.canva.com/design/DAHFeHSJrEQ/5d6hGY0XT6kotUXp1ewdkg/edit)
+O projeto reúne uma aplicação web e um app móvel Expo, conectados a uma API REST e a um banco PostgreSQL. Clientes podem consultar serviços e solicitar horários; prestadores podem acompanhar seus agendamentos.
 
----
+## Executar a aplicação integrada (Docker)
 
-## 🎯 Objetivo da 1ª Sprint: Estruturação Inicial do Projeto
+Pré-requisitos: Docker Desktop com Docker Compose e Node.js 20+ (para executar os builds locais).
 
-O objetivo central desta primeira entrega consiste na concepção integral do escopo, requisitos de negócio, arquitetura de software desacoplada, modelagem relacional do banco de dados, definição da infraestrutura em nuvem, planejamento e prova de conceito da mineração de dados, além do código base do back-end e prototipação navegável do front-end.
+1. Na raiz do repositório, crie `.env` a partir de `.env.example`.
+2. Troque `JWT_SECRET` por um valor aleatório de pelo menos 32 caracteres antes de iniciar. Por exemplo, gere com `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` e cole no `.env`. Não publique `.env` nem reutilize essa chave em produção.
+3. Inicie os serviços:
 
----
-
-## 📋 Matriz de Cumprimento das Entregas da 1ª Sprint
-
-| Requisito Mínimo da 1ª Sprint | Status | Artefatos e Evidências |
-| :--- | :---: | :--- |
-| **1. Definição do escopo e requisitos** | ✅ Concluído | [docs/01_escopo_e_requisitos.md](docs/01_escopo_e_requisitos.md) (RF01 a RF11 e RNF01 a RNF08) |
-| **2. Modelagem inicial** | ✅ Concluído | [docs/02_modelagem_arquitetura.md](docs/02_modelagem_arquitetura.md) (Diagramas de Casos de Uso, Arquitetura C4 e Sequência) |
-| **3. Criação do repositório Grupo (GitHub)** | ✅ Concluído | Repositório Git inicializado com [.gitignore](.gitignore), padronização e commits estruturados |
-| **4. Estrutura inicial do back-end** | ✅ Concluído | [backend/](backend/) (API REST Node.js + TypeScript + Express com rotas, anti-double-booking e health check) |
-| **5. Protótipo inicial do front-end** | ✅ Concluído | [frontend/](frontend/) (5 telas estáticas responsivas baseadas no Figma/Canva com Tailwind CSS) |
-| **6. Banco de dados modelado** | ✅ Concluído | [docs/03_banco_de_dados_conceitual_e_logico.md](docs/03_banco_de_dados_conceitual_e_logico.md) e DDL [docs/schema.sql](docs/schema.sql) |
-| **7. Computação em Nuvem II** | ✅ Concluído | [docs/04_computacao_em_nuvem_II.md](docs/04_computacao_em_nuvem_II.md) (Arquitetura AWS com ECS, RDS, S3, CloudFront e IAM) |
-| **8. Mineração de Dados** | ✅ Concluído | [docs/05_mineracao_de_dados.md](docs/05_mineracao_de_dados.md) (Yelp Dataset, análise de sentimento e [agrupamento de estabelecimentos](data-mining/agrupamento_estabelecimentos.py)) |
-
----
-
-
----
-
-## 🚀 Como Executar o Projeto Localmente
-
-### 1. Pré-requisitos
-- **Node.js**: versão 18+ (testado na versão 24)
-- **Navegador Web Moderno**: Chrome, Firefox, Edge ou Safari
-
----
-
-### 2. Executando o Back-end (API REST)
-
-1. Acesse o diretório do back-end:
-   ```bash
-   cd backend
-   ```
-2. Instale as dependências:
-   ```bash
-   npm install
-   ```
-3. Compile o código TypeScript:
-   ```bash
-   npm run build
-   ```
-4. Inicie o servidor:
-   ```bash
-   npm start
-   ```
-   *O servidor estará disponível em:* `http://localhost:3000`
-
-#### Rotas Principais para Teste:
-- **Health Check:** `GET http://localhost:3000/health`
-- **Catálogo de Serviços:** `GET http://localhost:3000/api/services`
-- **Cálculo de Horários Livres (RF05):** `GET http://localhost:3000/api/appointments/available-slots?providerId=1&serviceId=1&date=2026-09-04`
-- **Análise de Sentimento por IA (RF10 & RNF02):**
-  ```bash
-  curl -X POST http://localhost:3000/api/ai/sentiment-analysis \
-    -H "Content-Type: application/json" \
-    -d "{\"texto\": \"Atendimento excelente e pontual!\", \"nota\": 5}"
-  ```
-
----
-
-### 3. Executando o Front-end (Vite + React + TypeScript + Tailwind CSS)
-
-1. Acesse o diretório do front-end:
-   ```bash
-   cd frontend
-   ```
-2. Instale as dependências:
-   ```bash
-   npm install
-   ```
-3. Inicie o servidor de desenvolvimento do Vite:
-   ```bash
-   npm run dev
-   ```
-   *Acesse no navegador:* `http://localhost:5173`
-
-#### Telas e Módulos Implementados:
-- **Página Inicial (Home):** Hero interativo, apresentação e cards de acesso rápido
-- **Fluxo de Agendamento (Core):** Seleção de serviço, cálculo de slots livres em tempo real e anti-double booking (RF05, RF06, RF07)
-- **Painel do Prestador (Dashboard):** Métricas de faturamento, satisfação e grade com cores semafóricas (RF08, RF11, RNF06)
-- **Avaliações & IA de Sentimento:** Feedback pós-atendimento com classificação por Machine Learning em tempo real (RF09, RF10, RNF02)
-- **Autenticação & Registro:** Perfis segregados para Cliente e Prestador com campos específicos de estabelecimento (RF01, RF02, RNF03)
-
----
-
-### 4. Executando a análise de sentimento (Python)
-
-1. Acesse a pasta:
-   ```bash
-   cd data-mining
-   ```
-2. Instale os pacotes necessários:
-   ```bash
-   pip install pandas scikit-learn
-   ```
-3. Execute o script de treinamento e testes de inferência:
-   ```bash
-   python analise_sentimento.py
+   ```powershell
+   docker compose up --build
    ```
 
-#### Agrupamento não supervisionado de estabelecimentos
+4. Acesse:
+   - Aplicação web: `http://localhost:8080`
+   - API e health check (inclui PostgreSQL): `http://localhost:3000/health`
+   - Documentação interativa OpenAPI: `http://localhost:3000/api-docs`
 
-Baixe o Yelp Dataset pela [página do Kaggle](https://www.kaggle.com/datasets/yelp-dataset/yelp-dataset), extraia `yelp_academic_dataset_business.json` para `data-mining/dataset/` e então rode:
+O primeiro início do PostgreSQL cria as tabelas e carrega dados fictícios de desenvolvimento. Contas locais:
 
-```bash
+| Perfil | E-mail | Senha |
+|---|---|---|
+| Cliente | `cliente@exemplo.com` | `Agendou2026!` |
+| Prestador | `prestador@exemplo.com` | `Agendou2026!` |
+| Administrador | `admin@agendou.com` | `Agendou2026!` |
+
+Essas contas são somente para demonstração local; nunca as utilize em uma implantação pública. O SQL de seed de demonstração está separado do schema de produção em [`docs/seed.dev.sql`](docs/seed.dev.sql).
+
+O script de inicialização do Postgres só roda quando o volume `pgdata` é criado pela primeira vez. Se já havia um volume antes deste schema, aplique a migração manualmente com backup prévio. Para apagar dados locais e recriar a base, use `docker compose down -v` **somente se tiver certeza de que os dados nesse volume podem ser descartados**.
+
+## Executar em desenvolvimento sem o container de front-end
+
+O modo simples recomendado é executar Postgres e API pelo Compose e Vite localmente:
+
+```powershell
+docker compose up --build postgres backend
+cd frontend
+npm ci
+npm run dev
+```
+
+O Vite encaminha `/api` para `localhost:3000`. Para executar a API fora do Docker, instale as dependências em `backend`, copie `backend/.env.example` para `backend/.env`, configure uma `JWT_SECRET` segura e uma `DATABASE_URL` acessível, aplique [`docs/schema.sql`](docs/schema.sql) e inicie com `npm run dev`.
+
+### Preparar PostgreSQL instalado no Windows sem Docker
+
+Com o serviço PostgreSQL iniciado, abra o PowerShell na raiz do repositório e rode:
+
+```powershell
+.\scripts\setup-database.ps1
+```
+
+O script localiza o `psql.exe` no `PATH` ou em `C:\Program Files\PostgreSQL`, cria o banco `agendou_db` se ainda não existir e executa o schema e os dados locais de demonstração. Informe a senha do usuário `postgres` quando o `psql` solicitar. O script não remove nem recria bancos existentes; o seed é destinado somente a desenvolvimento.
+
+Se o PostgreSQL foi instalado em outro diretório ou usa outra porta/usuário, os parâmetros podem ser informados:
+
+```powershell
+.\scripts\setup-database.ps1 -Username meu_usuario -Port 5433 -PsqlPath "C:\caminho\PostgreSQL\bin\psql.exe"
+```
+
+Depois copie `backend\.env.example` para `backend\.env` e ajuste `DATABASE_URL` com o usuário, senha e porta da instalação local. Em seguida, inicie a API e o front-end nos terminais separados, conforme acima. Se o instalador não incluiu o `psql.exe`, adicione o componente **Command Line Tools** pelo instalador do PostgreSQL ou informe o caminho correto com `-PsqlPath`.
+
+## Aplicativo móvel (Expo)
+
+O app em [`mobile/`](mobile/) usa React Native e Expo Go e consome a mesma API que o site. Para executá-lo, inicie o PostgreSQL e a API, configure `mobile\.env` com o endereço da API acessível pelo dispositivo e siga o guia em [`mobile/README.md`](mobile/README.md). O app inclui login, catálogo, consulta de horários, agendamento e histórico. Para publicação, configure uma API com HTTPS e prepare um build da plataforma.
+
+## Funcionalidades e rotas
+
+- Autenticação de cliente/prestador/admin com senhas bcrypt, JWT com expiração e autorização por papel.
+- CRUD de serviços e configuração semanal de jornada.
+- Consulta de horários e bloqueio concorrente de reservas por prestador no PostgreSQL.
+- Atualização de status e avaliação somente de atendimento concluído.
+- Classificação de sentimento em tempo real pelo módulo TypeScript do backend.
+- Interface React para catálogo, agendamento, dashboard, login/cadastro e avaliações; a API é a fonte única dos dados, sem fallback para listas simuladas no navegador.
+
+A especificação REST é [`docs/openapi.json`](docs/openapi.json), também exibida pelo Swagger em `/api-docs`. Horários de atendimento são expressos na zona `America/Sao_Paulo` e persistidos como instantes com fuso no PostgreSQL; valide o comportamento temporal com a equipe antes de uma implantação fora do Brasil.
+
+## Mineração de dados
+
+Para executar a prova de conceito supervisionada sobre o conjunto de amostra:
+
+```powershell
 cd data-mining
-pip install pandas scikit-learn
-python agrupamento_estabelecimentos.py --clusters 5
+python -m pip install pandas scikit-learn
+python analise_sentimento.py
 ```
 
-O script gera `data-mining/resultados_agrupamento.csv` e exibe tamanhos dos grupos e silhouette score aproximado. Consulte [docs/05_mineracao_de_dados.md](docs/05_mineracao_de_dados.md) para os atributos e limitações da análise. A base completa não é incluída no Git por seu tamanho; obtenha-a no Kaggle e observe os termos da distribuição.
+O agrupamento K-Means opcional usa o arquivo `yelp_academic_dataset_business.json`, obtido segundo os termos do Kaggle e colocado em `data-mining/dataset/`. Os arquivos do dataset não são distribuídos neste repositório. Consulte [`docs/05_mineracao_de_dados.md`](docs/05_mineracao_de_dados.md) para método, limitações e orientações de evidência.
 
----
+## Documentação do projeto
 
-## 🔗 Publicação no GitHub do Grupo
+- [Escopo e requisitos](docs/01_escopo_e_requisitos.md)
+- [Modelagem e arquitetura](docs/02_modelagem_arquitetura.md)
+- [Banco de dados](docs/03_banco_de_dados_conceitual_e_logico.md) e [schema PostgreSQL](docs/schema.sql)
+- [Computação em Nuvem II](docs/04_computacao_em_nuvem_II.md)
+- [Mineração de Dados](docs/05_mineracao_de_dados.md)
+- [Contrato OpenAPI](docs/openapi.json)
 
-Para associar esta pasta local ao repositório remoto oficial do grupo no GitHub:
+## Implantação em nuvem
 
-```bash
-git remote add origin https://github.com/FatecFranca/DSM-G08-PI6-2026-2.git
-git branch -M main
-git push -u origin main
-```
-
----
-
-**Equipe de Desenvolvimento — PI 6º Semestre (2026)**
+O Docker Compose permite executar os serviços localmente para desenvolvimento e demonstração. Ele não configura, por si só, uma implantação de produção. Uma publicação em nuvem ainda precisa de configuração de rede e domínio, HTTPS, gerenciamento de segredos, backups, monitoramento e validação do ambiente e dos custos. A arquitetura prevista para essa etapa está descrita em [`docs/04_computacao_em_nuvem_II.md`](docs/04_computacao_em_nuvem_II.md).

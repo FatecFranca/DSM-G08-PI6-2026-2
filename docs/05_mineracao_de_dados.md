@@ -4,7 +4,7 @@
 **Disciplina-Satélite:** Mineração de Dados  
 **Professor Responsável:** Prof. Me. Alexandre Gomes  
 **Tema:** Sistema de Agendamento de Serviços Multiplataforma  
-**1ª Sprint:** Definição da base de dados e planejamento inicial das técnicas de mineração
+**Atualização em 23/10/2026:** classificação baseline executável sobre amostra local; coleta Yelp completa e modelo integrado ainda não comprovados.
 
 ---
 
@@ -41,7 +41,8 @@ A base analítica processada e adaptada para o pipeline de Machine Learning do p
   - **Negativo:** Avaliações de 1 e 2 estrelas ($stars \le 2$).
   - *(Avaliações de 3 estrelas são filtradas na classificação binária por representarem neutralidade).*
 - **1ª Sprint (Validação e Prova de Conceito):** Foi extraída uma amostra representativa de 100 avaliações estruturada em [`data-mining/dataset_avaliacoes_exemplo.csv`](dataset_avaliacoes_exemplo.csv), com balanceamento entre termos positivos e negativos e adaptação linguística para expressões cotidianas de serviços locais no Brasil.
-- **2ª e 3ª Sprints (Escala e Produção):** Ingestão em lote do dataset Yelp completo via script de carga, permitindo o refinamento do vocabulário e re-treinamento contínuo com os dados operacionais coletados no sistema.
+- **2ª Sprint:** execução reproduzível do baseline no CSV de amostra, com comparação inicial entre Naive Bayes Multinomial e Regressão Logística e geração de relatório de métricas.
+- **3ª Sprint:** coleta/filtragem do dataset autorizado, avaliação do modelo escolhido e integração do classificador treinado com a API são itens a concluir e documentar; ainda não estão implementados como carga automática.
 
 ---
 
@@ -73,14 +74,14 @@ flowchart LR
   $$TF\text{-}IDF(t, d, D) = TF(t, d) \times \log\left(\frac{|D|}{1 + |\{d \in D : t \in d\}|}\right)$$
 - Utilização de *unigramas* e *bigramas* (`ngram_range=(1, 2)`) para capturar expressões compostas importantes (ex: "não gostei", "muito bom", "péssimo atendimento").
 
-### 3.4 Etapa 4: Algoritmos Candidatos para Classificação
-Serão avaliados e comparados 3 algoritmos consagrados na literatura de mineração de textos:
+### 3.4 Etapa 4: Algoritmos candidatos e baseline executável
+O script atual treina e compara dois candidatos na amostra:
 1. **Multinomial Naive Bayes (MNB):** Modelo probabilístico baseado no Teorema de Bayes com suposição de independência condicional. Extremamente rápido na predição (< 50ms) e altamente eficaz em dados esparsos de texto.
 2. **Regressão Logística (Logistic Regression):** Modelo linear robusto que oferece estimativas calibradas de probabilidade de pertencimento à classe Positiva/Negativa.
-3. **Linear Support Vector Classifier (LinearSVC):** Encontra o hiperplano ótimo de separação em espaços vetoriais de alta dimensionalidade, apresentando excelente generalização.
+Um LinearSVC pode ser adicionado como experimento futuro; ele não é treinado pelo script atual.
 
 ### 3.5 Etapa 5: Métricas de Avaliação
-Para garantir a confiabilidade da classificação, os modelos serão validados usando **Validação Cruzada (K-Fold com $k=5$)** e avaliados por:
+O baseline atual usa uma divisão estratificada de 75% treino / 25% teste, com semente fixa para reprodutibilidade. A vetorização é ajustada somente com o conjunto de treino para evitar vazamento de vocabulário. O relatório inclui:
 - **Acurácia:** Proporção geral de acertos.
 - **Precisão (Precision):** Capacidade de não classificar como positivo um comentário negativo.
 - **Revocação (Recall):** Capacidade de identificar todos os comentários positivos/negativos reais.
@@ -88,23 +89,26 @@ Para garantir a confiabilidade da classificação, os modelos serão validados u
   $$F_1 = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}$$
 - **Matriz de Confusão:** Visualização de verdadeiros positivos, falsos positivos, verdadeiros negativos e falsos negativos.
 
-### 3.6 Etapa 6: Requisito de Latência e Integração (RNF02)
-O modelo treinado e o vetorizador TF-IDF são serializados (`joblib` / `pickle` ou integrados diretamente em microsserviço). Na chamada de API `POST /api/ai/sentiment-analysis`, a inferência é executada em **< 100 milissegundos**, atendendo com folga a exigência de **< 1 segundo** estabelecida no **RNF02**.
+### 3.6 Etapa 6: Latência e integração (RNF02)
+O endpoint `POST /api/ai/sentiment-analysis` e o envio de avaliações usam atualmente uma classificação lexical implementada em [`backend/src/services/sentiment.service.ts`](../backend/src/services/sentiment.service.ts). Ela não carrega o modelo TF-IDF treinado pelo script; a confiança retornada pelo endpoint é heurística, não probabilidade calibrada. A latência medida pelo endpoint pode ser evidenciada, mas não representa desempenho do modelo sklearn. A serialização e integração do classificador treinado são trabalho pendente da Sprint 3.
 
 ---
 
-## 4. Evidências Práticas e Artefatos da 1ª Sprint
+## 4. Evidências Práticas e Artefatos da Sprint 2
 
 Os artefatos implementados para esta etapa encontram-se estruturados na pasta `/data-mining`:
-- **Dataset de Amostra:** [dataset_avaliacoes_exemplo.csv](file:///C:/Users/hugo/Documents/Faculdade/data-mining/dataset_avaliacoes_exemplo.csv)
-- **Script de Treinamento e Mineração:** [analise_sentimento.py](file:///C:/Users/hugo/Documents/Faculdade/data-mining/analise_sentimento.py)
-- **Módulo Executável no Back-end:** [sentiment.service.ts](file:///C:/Users/hugo/Documents/Faculdade/backend/src/services/sentiment.service.ts)
+- **Dataset de amostra:** [`data-mining/dataset_avaliacoes_exemplo.csv`](../data-mining/dataset_avaliacoes_exemplo.csv).
+- **Script de treinamento e avaliação:** [`data-mining/analise_sentimento.py`](../data-mining/analise_sentimento.py).
+- **Relatório reproduzível:** execute `python analise_sentimento.py` para gerar `resultados_sentimento.json` com distribuição, acurácia, relatório por classe, matriz de confusão e tempos de inferência.
+- **Classificador da API (baseline lexical, distinto do modelo sklearn):** [`backend/src/services/sentiment.service.ts`](../backend/src/services/sentiment.service.ts).
+
+O grupo deve arquivar o relatório gerado e capturas do terminal como evidência da execução real; resultados não devem ser copiados de execuções não realizadas.
 
 ---
 
 ## 5. Agrupamento não supervisionado de estabelecimentos
 
-Além da análise de sentimento, o projeto utiliza o arquivo `yelp_academic_dataset_business.json` para descobrir grupos de negócios com características parecidas, sem rótulos prévios. Essa é uma tarefa de mineração de dados e um exemplo de aprendizado não supervisionado.
+Além da análise de sentimento, o repositório contém um script opcional para agrupar negócios Yelp sem rótulos prévios. A execução depende de obter o dataset; sem o arquivo original, essa análise não foi executada nem deve ser reportada como resultado validado.
 
 ### 5.1 Obtenção dos dados
 
