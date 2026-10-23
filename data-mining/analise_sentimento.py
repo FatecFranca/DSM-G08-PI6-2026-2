@@ -6,21 +6,18 @@ Script de Treinamento e Inferência de Sentimentos (NLP / Classificação Superv
 Atende aos requisitos: RF09, RF10 e RNF02 (< 1s de inferência).
 """
 
-import os
+import argparse
+import json
 import re
 import time
-import pandas as pd
+from pathlib import Path
 
-# Tentativa de importação de bibliotecas padrão de Data Science
-try:
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.model_selection import train_test_split
-    from sklearn.naive_bayes import MultinomialNB
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
-    SKLEARN_AVAILABLE = True
-except ImportError:
-    SKLEARN_AVAILABLE = False
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 
 
 def preprocessar_texto(texto: str) -> str:
@@ -35,11 +32,9 @@ def preprocessar_texto(texto: str) -> str:
     return texto
 
 
-def executar_pipeline():
-    caminho_csv = os.path.join(os.path.dirname(__file__), "dataset_avaliacoes_exemplo.csv")
-    if not os.path.exists(caminho_csv):
-        print(f"Erro: Arquivo {caminho_csv} não encontrado.")
-        return
+def executar_pipeline(caminho_csv: Path, caminho_relatorio: Path):
+    if not caminho_csv.is_file():
+        raise FileNotFoundError(f"Arquivo de entrada não encontrado: {caminho_csv}")
 
     print("=" * 60)
     print("PI 6º SEMESTRE - PIPELINE DE MINERAÇÃO DE DADOS (NLP)")
@@ -52,14 +47,6 @@ def executar_pipeline():
     print("2. Pré-processando textos...")
     df["texto_limpo"] = df["comentario_texto"].apply(preprocessar_texto)
 
-    if not SKLEARN_AVAILABLE:
-        print("\n[AVISO]: Bibliotecas scikit-learn não detectadas neste ambiente Python.")
-        print("Para instalar: pip install pandas scikit-learn\n")
-        print("Demonstrando inferência heurística baseada em léxico:")
-        exemplo = "O atendimento foi maravilhoso e super pontual!"
-        print(f"Exemplo de teste: '{exemplo}' -> Sentimento previsto: Positivo")
-        return
-
     print("3. Extração de características (TF-IDF com unigramas e bigramas)...")
     # Stopwords comuns em português
     stopwords_pt = [
@@ -67,15 +54,13 @@ def executar_pipeline():
         "uma", "os", "no", "se", "na", "por", "mais", "as", "dos", "como", "mas",
         "ao", "ele", "das", "à", "seu", "sua", "ou", "quando", "muito", "nos", "já"
     ]
-    vectorizer = TfidfVectorizer(ngram_range=(1, 2), stop_words=stopwords_pt)
-    
-    X = vectorizer.fit_transform(df["texto_limpo"])
-    y = df["sentimento"]
-
     print("4. Dividindo dados em Treino (75%) e Teste (25%)...")
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.25, random_state=42, stratify=y
+    textos_train, textos_test, y_train, y_test = train_test_split(
+        df["texto_limpo"], df["sentimento"], test_size=0.25, random_state=42, stratify=df["sentimento"]
     )
+    vectorizer = TfidfVectorizer(ngram_range=(1, 2), stop_words=stopwords_pt)
+    X_train = vectorizer.fit_transform(textos_train)
+    X_test = vectorizer.transform(textos_test)
 
     print("5. Treinando Modelo 1: Multinomial Naive Bayes (MNB)...")
     nb_model = MultinomialNB()
@@ -93,7 +78,8 @@ def executar_pipeline():
 
     print("=" * 60)
     print("RELATÓRIO DE CLASSIFICAÇÃO (REGRESSÃO LOGÍSTICA):")
-    print(classification_report(y_test, y_pred_lr))
+    report = classification_report(y_test, y_pred_lr, output_dict=True, zero_division=0)
+    print(classification_report(y_test, y_pred_lr, zero_division=0))
 
     print("=" * 60)
     print("TESTE DE INFERÊNCIA EM TEMPO REAL (RNF02 < 1s):")
@@ -104,6 +90,7 @@ def executar_pipeline():
         "Não recomendo, o trabalho ficou torto e muito caro."
     ]
 
+    inferencias = []
     for frase in frases_teste:
         t_inicio = time.perf_counter()
         frase_proc = preprocessar_texto(frase)
@@ -114,7 +101,38 @@ def executar_pipeline():
         tempo_ms = (t_fim - t_inicio) * 1000
         print(f"Frase: \"{frase}\"")
         print(f" -> Predição: [{pred}] ({prob:.1f}% de confiança) | Tempo de inferência: {tempo_ms:.2f}ms (RNF02 OK)\n")
+        inferencias.append({
+            "texto": frase,
+            "sentimento": str(pred),
+            "confianca_percentual": round(float(prob), 2),
+            "tempo_ms": round(float(tempo_ms), 2)
+        })
+
+    resultado = {
+        "dataset": caminho_csv.name,
+        "total_amostras": int(len(df)),
+        "distribuicao_classes": {str(key): int(value) for key, value in df["sentimento"].value_counts().items()},
+        "divisao": {"treino": 0.75, "teste": 0.25, "semente": 42},
+        "modelos": {
+            "MultinomialNB": {"acuracia": round(float(acc_nb), 4)},
+            "RegressaoLogistica": {
+                "acuracia": round(float(acc_lr), 4),
+                "metricas_por_classe": report,
+                "matriz_confusao": confusion_matrix(y_test, y_pred_lr, labels=lr_model.classes_).tolist(),
+                "ordem_classes_matriz": [str(label) for label in lr_model.classes_]
+            }
+        },
+        "inferencias_exemplo": inferencias
+    }
+    caminho_relatorio.parent.mkdir(parents=True, exist_ok=True)
+    caminho_relatorio.write_text(json.dumps(resultado, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"Relatório de métricas salvo em: {caminho_relatorio}")
 
 
 if __name__ == "__main__":
-    executar_pipeline()
+    pasta = Path(__file__).resolve().parent
+    parser = argparse.ArgumentParser(description="Treina e avalia classificadores de sentimento no dataset CSV.")
+    parser.add_argument("--input", type=Path, default=pasta / "dataset_avaliacoes_exemplo.csv")
+    parser.add_argument("--report", type=Path, default=pasta / "resultados_sentimento.json")
+    argumentos = parser.parse_args()
+    executar_pipeline(argumentos.input, argumentos.report)
