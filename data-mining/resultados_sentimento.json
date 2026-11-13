@@ -1,0 +1,88 @@
+{
+  "dataset": "dataset_avaliacoes_exemplo.csv",
+  "total_amostras": 30,
+  "distribuicao_classes": {
+    "Positivo": 15,
+    "Negativo": 15
+  },
+  "divisao": {
+    "treino": 0.75,
+    "teste": 0.25,
+    "semente": 42
+  },
+  "modelos": {
+    "MultinomialNB": {
+      "acuracia": 0.625
+    },
+    "RegressaoLogistica": {
+      "acuracia": 0.75,
+      "metricas_por_classe": {
+        "Negativo": {
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1-score": 0.6666666666666666,
+          "support": 4.0
+        },
+        "Positivo": {
+          "precision": 0.6666666666666666,
+          "recall": 1.0,
+          "f1-score": 0.8,
+          "support": 4.0
+        },
+        "accuracy": 0.75,
+        "macro avg": {
+          "precision": 0.8333333333333333,
+          "recall": 0.75,
+          "f1-score": 0.7333333333333334,
+          "support": 8.0
+        },
+        "weighted avg": {
+          "precision": 0.8333333333333333,
+          "recall": 0.75,
+          "f1-score": 0.7333333333333334,
+          "support": 8.0
+        }
+      },
+      "matriz_confusao": [
+        [
+          2,
+          2
+        ],
+        [
+          0,
+          4
+        ]
+      ],
+      "ordem_classes_matriz": [
+        "Negativo",
+        "Positivo"
+      ]
+    }
+  },
+  "inferencias_exemplo": [
+    {
+      "texto": "Atendimento impecável, muito rápido e atencioso.",
+      "sentimento": "Positivo",
+      "confianca_percentual": 55.73,
+      "tempo_ms": 1.28
+    },
+    {
+      "texto": "Péssimo serviço, chegou atrasado e não teve educação.",
+      "sentimento": "Negativo",
+      "confianca_percentual": 56.38,
+      "tempo_ms": 1.07
+    },
+    {
+      "texto": "Gostei muito do resultado final, voltarei com certeza.",
+      "sentimento": "Positivo",
+      "confianca_percentual": 50.94,
+      "tempo_ms": 1.05
+    },
+    {
+      "texto": "Não recomendo, o trabalho ficou torto e muito caro.",
+      "sentimento": "Negativo",
+      "confianca_percentual": 51.74,
+      "tempo_ms": 1.03
+    }
+  ]
+}

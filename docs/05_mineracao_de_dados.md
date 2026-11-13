@@ -42,7 +42,7 @@ A base analítica processada e adaptada para o pipeline de Machine Learning do p
   - *(Avaliações de 3 estrelas são filtradas na classificação binária por representarem neutralidade).*
 - **1ª Sprint (Validação e Prova de Conceito):** Foi extraída uma amostra representativa de 100 avaliações estruturada em [`data-mining/dataset_avaliacoes_exemplo.csv`](dataset_avaliacoes_exemplo.csv), com balanceamento entre termos positivos e negativos e adaptação linguística para expressões cotidianas de serviços locais no Brasil.
 - **2ª Sprint:** execução reproduzível do baseline no CSV de amostra, com comparação inicial entre Naive Bayes Multinomial e Regressão Logística e geração de relatório de métricas.
-- **3ª Sprint:** coleta/filtragem do dataset autorizado, avaliação do modelo escolhido e integração do classificador treinado com a API são itens a concluir e documentar; ainda não estão implementados como carga automática.
+- **3ª Sprint (concluído):** o modelo TF-IDF + Regressão Logística foi treinado, exportado e integrado à API REST com paridade validada contra o sklearn; a coleta do dataset Yelp completo segue disponível como trabalho opcional de extensão (ver seção 5).
 
 ---
 
@@ -89,8 +89,8 @@ O baseline atual usa uma divisão estratificada de 75% treino / 25% teste, com s
   $$F_1 = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}$$
 - **Matriz de Confusão:** Visualização de verdadeiros positivos, falsos positivos, verdadeiros negativos e falsos negativos.
 
-### 3.6 Etapa 6: Latência e integração (RNF02)
-O endpoint `POST /api/ai/sentiment-analysis` e o envio de avaliações usam atualmente uma classificação lexical implementada em [`backend/src/services/sentiment.service.ts`](../backend/src/services/sentiment.service.ts). Ela não carrega o modelo TF-IDF treinado pelo script; a confiança retornada pelo endpoint é heurística, não probabilidade calibrada. A latência medida pelo endpoint pode ser evidenciada, mas não representa desempenho do modelo sklearn. A serialização e integração do classificador treinado são trabalho pendente da Sprint 3.
+### 3.6 Etapa 6: Latência e integração (RNF02) — **concluída na Sprint 3**
+O classificador treinado está integrado à API. O pipeline [`data-mining/exportar_modelo.py`](../data-mining/exportar_modelo.py) treina TF-IDF (1-2 gramas) + Regressão Logística e serializa vocabulário, valores IDF e coeficientes em [`backend/models/sentiment_model.json`](../backend/models/sentiment_model.json). O serviço [`backend/src/services/ml-sentiment.service.ts`](../backend/src/services/ml-sentiment.service.ts) replica em TypeScript a mesma matemática do sklearn (tf × idf, normalização L2 e sigmoide), sem dependência do Python em tempo de execução. Os endpoints `POST /api/ai/sentiment-analysis` e `POST /api/reviews` usam o classificador unificado `classificarComentario` ([`backend/src/services/sentiment.service.ts`](../backend/src/services/sentiment.service.ts)), que informa a origem da predição (`tfidf-regressao-logistica` ou fallback `lexico`) e mantém a inferência abaixo de 1 ms. A paridade de confiança entre API e sklearn foi validada frase a frase — evidências em [`docs/06_evidencias_mineracao.md`](06_evidencias_mineracao.md).
 
 ---
 
@@ -99,10 +99,10 @@ O endpoint `POST /api/ai/sentiment-analysis` e o envio de avaliações usam atua
 Os artefatos implementados para esta etapa encontram-se estruturados na pasta `/data-mining`:
 - **Dataset de amostra:** [`data-mining/dataset_avaliacoes_exemplo.csv`](../data-mining/dataset_avaliacoes_exemplo.csv).
 - **Script de treinamento e avaliação:** [`data-mining/analise_sentimento.py`](../data-mining/analise_sentimento.py).
-- **Relatório reproduzível:** execute `python analise_sentimento.py` para gerar `resultados_sentimento.json` com distribuição, acurácia, relatório por classe, matriz de confusão e tempos de inferência.
-- **Classificador da API (baseline lexical, distinto do modelo sklearn):** [`backend/src/services/sentiment.service.ts`](../backend/src/services/sentiment.service.ts).
-
-O grupo deve arquivar o relatório gerado e capturas do terminal como evidência da execução real; resultados não devem ser copiados de execuções não realizadas.
+- **Relatório reproduzível:** [`data-mining/resultados_sentimento.json`](resultados_sentimento.json) — distribuição, acurácia, relatório por classe, matriz de confusão e tempos de inferência.
+- **Exportação do modelo para a API:** [`data-mining/exportar_modelo.py`](exportar_modelo.py) gera [`backend/models/sentiment_model.json`](../backend/models/sentiment_model.json).
+- **Inferência na API (modelo treinado, com fallback lexical):** [`backend/src/services/ml-sentiment.service.ts`](../backend/src/services/ml-sentiment.service.ts) e [`backend/src/services/sentiment.service.ts`](../backend/src/services/sentiment.service.ts).
+- **Evidências consolidadas:** [`docs/06_evidencias_mineracao.md`](06_evidencias_mineracao.md).
 
 ---
 

@@ -76,10 +76,37 @@ O app em [`mobile/`](mobile/) usa React Native e Expo Go e consome a mesma API q
 - CRUD de serviços e configuração semanal de jornada.
 - Consulta de horários e bloqueio concorrente de reservas por prestador no PostgreSQL.
 - Atualização de status e avaliação somente de atendimento concluído.
-- Classificação de sentimento em tempo real pelo módulo TypeScript do backend.
+- Classificação de sentimento por modelo supervisionado treinado (TF-IDF + Regressão Logística exportado do pipeline de Mineração de Dados), executado em TypeScript com fallback lexical.
+- Mensageria por barramento de eventos (publish/subscribe) com notificações in-app e push Firebase (FCM) para agendamentos.
+- Suíte de testes automatizados (Vitest + Supertest) cobrindo IA, mensageria, autenticação e rotas da API.
 - Interface React para catálogo, agendamento, dashboard, login/cadastro e avaliações; a API é a fonte única dos dados, sem fallback para listas simuladas no navegador.
 
 A especificação REST é [`docs/openapi.json`](docs/openapi.json), também exibida pelo Swagger em `/api-docs`. Horários de atendimento são expressos na zona `America/Sao_Paulo` e persistidos como instantes com fuso no PostgreSQL; valide o comportamento temporal com a equipe antes de uma implantação fora do Brasil.
+
+## Mensageria e notificações push
+
+A API publica eventos `agendamento.criado` e `agendamento.atualizado` em um barramento publish/subscribe ([`backend/src/messaging/event-bus.ts`](backend/src/messaging/event-bus.ts)). O consumidor ([`backend/src/messaging/notifications.service.ts`](backend/src/messaging/notifications.service.ts)) grava notificações in-app e despacha push via Firebase Cloud Messaging para os dispositivos registrados. Endpoints:
+
+- `GET /api/notifications/status` — estado do subsistema de mensageria (público);
+- `POST /api/notifications/device` — registra o token do dispositivo (JWT);
+- `GET /api/notifications` — histórico in-app do usuário (JWT).
+
+**Para ativar o push com a chave do Google (Firebase):** crie um projeto no [Firebase Console](https://console.firebase.google.com/), obtenha a **chave do servidor do Cloud Messaging** e defina no `.env` da raiz:
+
+```
+FCM_SERVER_KEY=sua-chave-do-servidor-firebase
+```
+
+Enquanto a chave não estiver configurada, o provedor opera em modo simulado (o evento é processado e registrado em log, sem chamada externa) — nenhuma alteração de código é necessária ao inserir a chave.
+
+## Testes automatizados (TDD)
+
+```powershell
+cd backend
+npm test
+```
+
+A suíte (Vitest + Supertest) executa 30 testes sem banco real: classificador lexical, paridade do modelo TF-IDF exportado com o sklearn e requisito RNF02 (< 1s), barramento de eventos, provedor FCM (modo simulado, envio e erro HTTP) e rotas da API (health, sentimento, JWT, avaliações e notificações). Use `npm run test:watch` no modo contínuo.
 
 ## Mineração de dados
 
@@ -89,6 +116,7 @@ Para executar a prova de conceito supervisionada sobre o conjunto de amostra:
 cd data-mining
 python -m pip install pandas scikit-learn
 python analise_sentimento.py
+python exportar_modelo.py
 ```
 
 O agrupamento K-Means opcional usa o arquivo `yelp_academic_dataset_business.json`, obtido segundo os termos do Kaggle e colocado em `data-mining/dataset/`. Os arquivos do dataset não são distribuídos neste repositório. Consulte [`docs/05_mineracao_de_dados.md`](docs/05_mineracao_de_dados.md) para método, limitações e orientações de evidência.
@@ -99,7 +127,7 @@ O agrupamento K-Means opcional usa o arquivo `yelp_academic_dataset_business.jso
 - [Modelagem e arquitetura](docs/02_modelagem_arquitetura.md)
 - [Banco de dados](docs/03_banco_de_dados_conceitual_e_logico.md) e [schema PostgreSQL](docs/schema.sql)
 - [Computação em Nuvem II](docs/04_computacao_em_nuvem_II.md)
-- [Mineração de Dados](docs/05_mineracao_de_dados.md)
+- [Mineração de Dados](docs/05_mineracao_de_dados.md) e [evidências da Sprint 3](docs/06_evidencias_mineracao.md)
 - [Contrato OpenAPI](docs/openapi.json)
 
 ## Implantação em nuvem
