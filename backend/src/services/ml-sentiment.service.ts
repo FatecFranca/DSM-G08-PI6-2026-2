@@ -17,6 +17,7 @@ export interface ModeloSentimento {
   coeficientes: number[];
   intercepto: number;
   classe_positiva: string;
+  preprocessamento?: { stopwords?: string[] };
   metricas_holdout: { acuracia: number };
 }
 
@@ -65,10 +66,13 @@ function preprocessarTexto(texto: string): string {
     .trim();
 }
 
-function gerarNgramas(tokens: string[]): string[] {
-  const ngramas = [...tokens];
-  for (let i = 0; i + 1 < tokens.length; i++) {
-    ngramas.push(`${tokens[i]} ${tokens[i + 1]}`);
+// Igual ao TfidfVectorizer: stopwords são removidas da sequência ANTES da
+// geração dos bigramas ('além do combinado' -> bigrama 'além combinado').
+function gerarNgramas(tokens: string[], stopwords: Set<string>): string[] {
+  const restantes = tokens.filter(t => !stopwords.has(t));
+  const ngramas = [...restantes];
+  for (let i = 0; i + 1 < restantes.length; i++) {
+    ngramas.push(`${restantes[i]} ${restantes[i + 1]}`);
   }
   return ngramas;
 }
@@ -91,8 +95,9 @@ export function inferirComModelo(texto: string): PredicaoModelo | null {
   if (!modeloAtual) return null;
 
   const inicio = performance.now();
+  const stopwords = new Set(modeloAtual.preprocessamento?.stopwords || []);
   const tokens = preprocessarTexto(texto).split(' ').filter(t => t.length >= 2);
-  const ngramas = gerarNgramas(tokens);
+  const ngramas = gerarNgramas(tokens, stopwords);
 
   // Contagem de termos (tf bruto) presentes no vocabulário
   const contagens = new Map<number, number>();
