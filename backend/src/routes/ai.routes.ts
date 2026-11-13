@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { analisarSentimento } from '../services/sentiment.service';
+import { classificarComentario } from '../services/sentiment.service';
 
 const router = Router();
 
@@ -15,7 +15,7 @@ router.post('/sentiment-analysis', (req: Request, res: Response) => {
   if (notaNum !== undefined && (!Number.isInteger(notaNum) || notaNum < 1 || notaNum > 5)) {
     return res.status(400).json({ error: 'nota deve ser um número inteiro entre 1 e 5.' });
   }
-  const resultado = analisarSentimento(texto, notaNum);
+  const resultado = classificarComentario(texto, notaNum);
 
   return res.json({
     input: {
@@ -25,6 +25,7 @@ router.post('/sentiment-analysis', (req: Request, res: Response) => {
     prediction: {
       sentimento: resultado.sentimento,
       confianca: resultado.confianca,
+      modelo: resultado.modelo,
       detalhes: resultado.detalhes
     },
     performance: {

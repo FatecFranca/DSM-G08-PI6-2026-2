@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { pool } from '../database/db';
 import { asyncHandler, authMiddleware, AuthenticatedRequest } from '../middlewares/auth.middleware';
-import { analisarSentimento } from '../services/sentiment.service';
+import { classificarComentario } from '../services/sentiment.service';
 
 const router = Router();
 
@@ -25,7 +25,7 @@ router.post('/', authMiddleware, asyncHandler(async (req: AuthenticatedRequest, 
     return res.status(409).json({ error: 'A avaliação só pode ser enviada após a conclusão do atendimento.' });
   }
 
-  const analysis = analisarSentimento(comentario.trim(), score);
+  const analysis = classificarComentario(comentario.trim(), score);
   try {
     const result = await pool.query(
       `INSERT INTO avaliacoes (id_agendamento, nota, comentario, sentimento_predito)
@@ -39,6 +39,7 @@ router.post('/', authMiddleware, asyncHandler(async (req: AuthenticatedRequest, 
       aiAnalysis: {
         sentimento: analysis.sentimento,
         confianca: analysis.confianca,
+        modelo: analysis.modelo,
         tempoProcessamentoMs: analysis.tempoProcessamentoMs,
         rnf02_status: analysis.tempoProcessamentoMs < 1000 ? 'ATENDIDO (< 1s)' : 'VIOLADO'
       }

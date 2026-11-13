@@ -15,6 +15,8 @@ const TERMOS_NEGATIVOS = new Set([
   'caro', 'desonesto', 'estragou', 'pior', 'insatisfeito', 'alergia', 'perda de tempo'
 ]);
 
+import { inferirComModelo } from './ml-sentiment.service';
+
 export interface ResultadoSentimento {
   sentimento: 'Positivo' | 'Negativo';
   confianca: number;
@@ -24,6 +26,36 @@ export interface ResultadoSentimento {
     termosNegativosDetectados: string[];
     pontuacao: number;
   };
+}
+
+export type OrigemClassificacao = 'tfidf-regressao-logistica' | 'lexico';
+
+export interface ResultadoClassificacao extends ResultadoSentimento {
+  modelo: OrigemClassificacao;
+}
+
+/**
+ * Classificador unificado usado pelos endpoints da API (RF10 e RNF02).
+ * Prioriza o modelo supervisionado treinado pelo pipeline de Mineração de Dados
+ * (TF-IDF + Regressão Logística) e, caso o arquivo do modelo não esteja
+ * disponível, recorre ao classificador lexical local.
+ */
+export function classificarComentario(texto: string, nota?: number): ResultadoClassificacao {
+  const predicao = inferirComModelo(texto);
+  if (predicao) {
+    return {
+      sentimento: predicao.sentimento,
+      confianca: predicao.confianca,
+      tempoProcessamentoMs: predicao.tempoProcessamentoMs,
+      modelo: 'tfidf-regressao-logistica',
+      detalhes: {
+        termosPositivosDetectados: [],
+        termosNegativosDetectados: [],
+        pontuacao: predicao.sentimento === 'Positivo' ? 1 : -1
+      }
+    };
+  }
+  return { ...analisarSentimento(texto, nota), modelo: 'lexico' };
 }
 
 export function analisarSentimento(texto: string, nota?: number): ResultadoSentimento {

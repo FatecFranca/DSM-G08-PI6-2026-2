@@ -47,6 +47,9 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 
+# Dependências Python locais do pipeline de mineração (instaladas com pip --target)
+data-mining/.pylibs/
+
 # Yelp Dataset (arquivos grandes obtidos separadamente no Kaggle)
 data-mining/dataset/
 data-mining/resultados_agrupamento.csv
