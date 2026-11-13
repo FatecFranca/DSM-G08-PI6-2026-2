@@ -11,7 +11,9 @@ ENV NODE_ENV=production
 COPY backend/package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/dist ./dist
+COPY backend/models /models
 COPY docs/openapi.json /docs/openapi.json
+ENV SENTIMENT_MODEL_PATH=/models/sentiment_model.json
 USER node
 EXPOSE 3000
 CMD ["node", "dist/server.js"]

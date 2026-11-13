@@ -28,6 +28,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgres://agendou_user:${POSTGRES_PASSWORD:-local_only_change_me}@postgres:5432/agendou_db}
       DATABASE_SSL: ${DATABASE_SSL:-false}
       JWT_SECRET: ${JWT_SECRET:?Configure JWT_SECRET no arquivo .env}
+      FCM_SERVER_KEY: ${FCM_SERVER_KEY:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080,http://localhost:5173}
     ports:
       - "3000:3000"
