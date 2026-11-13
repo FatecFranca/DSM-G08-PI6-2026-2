@@ -33,7 +33,13 @@ async function carregarContexto(dados: DadosAgendamento): Promise<ContextoAgenda
      WHERE a.id_agendamento = $1`,
     [dados.id_agendamento]
   );
-  return resultado.rows[0] || null;
+  const linha = resultado.rows[0];
+  if (!linha) return null;
+  return {
+    clienteNome: linha.cliente_nome,
+    prestadorNome: linha.prestador_nome,
+    servicoTitulo: linha.servico_titulo
+  };
 }
 
 async function notificarUsuario(
