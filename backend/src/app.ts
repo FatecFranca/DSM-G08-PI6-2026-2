@@ -6,8 +6,10 @@ import scheduleRoutes from './routes/schedule.routes';
 import appointmentsRoutes from './routes/appointments.routes';
 import reviewsRoutes from './routes/reviews.routes';
 import aiRoutes from './routes/ai.routes';
+import notificationsRoutes from './routes/notifications.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { pool } from './database/db';
+import { inicializarConsumidorNotificacoes } from './messaging/notifications.service';
 import swaggerUi from 'swagger-ui-express';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -39,6 +41,9 @@ app.get('/health', async (_req: Request, res: Response) => {
   }
 });
 
+// Consumidor de mensageria (push/in-app) para eventos de agendamento
+inicializarConsumidorNotificacoes();
+
 // Registro de rotas da API REST (RNF08)
 app.use('/api/auth', authRoutes);
 app.use('/api/services', servicesRoutes);
@@ -46,6 +51,7 @@ app.use('/api/schedule', scheduleRoutes);
 app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Middleware de tratamento global de erros
 app.use(errorHandler);

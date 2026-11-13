@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { pool } from '../database/db';
 import { asyncHandler, authMiddleware, AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { publicar } from '../messaging/event-bus';
 
 const router = Router();
 const ACTIVE_STATUSES = ['Pendente', 'Confirmado'];
@@ -176,6 +177,14 @@ router.post('/', authMiddleware, asyncHandler(async (req: AuthenticatedRequest, 
       [clientId, providerId, serviceId, start.toISOString(), end.toISOString(), req.body.observacoes || '']
     );
     await client.query('COMMIT');
+    // Mensageria: publica o evento para os consumidores (push/in-app)
+    publicar('agendamento.criado', {
+      id_agendamento: result.rows[0].id_agendamento,
+      id_cliente: result.rows[0].id_cliente,
+      id_prestador: result.rows[0].id_prestador,
+      id_servico: result.rows[0].id_servico,
+      status: result.rows[0].status
+    });
     return res.status(201).json({ message: 'Agendamento confirmado.', appointment: result.rows[0] });
   } catch (error) {
     await client.query('ROLLBACK');
@@ -240,6 +249,15 @@ router.patch('/:id/status', authMiddleware, asyncHandler(async (req: Authenticat
      RETURNING id_agendamento, id_cliente, id_prestador, id_servico, data_hora_inicio, data_hora_fim, status, observacoes`,
     [id, status]
   );
+  // Mensageria: publica a mudança de status para os consumidores
+  publicar('agendamento.atualizado', {
+    id_agendamento: result.rows[0].id_agendamento,
+    id_cliente: result.rows[0].id_cliente,
+    id_prestador: result.rows[0].id_prestador,
+    id_servico: result.rows[0].id_servico,
+    status,
+    status_anterior: appointment.status
+  });
   return res.json({ message: `Agendamento atualizado para ${status}.`, appointment: result.rows[0] });
 }));
 

@@ -108,3 +108,32 @@ ON jornadas_trabalho (id_prestador, dia_semana);
 -- Índice para catálogo de serviços ativos
 CREATE INDEX IF NOT EXISTS idx_servicos_prestador_ativo 
 ON servicos (id_prestador, ativo);
+
+-- ====================================================================
+-- MENSAGERIA / NOTIFICAÇÕES (disciplina-chave: protocolos de mensageria)
+-- Tabelas criadas com IF NOT EXISTS para não afetar bases existentes.
+-- ====================================================================
+
+-- Registro de dispositivos para push (Firebase Cloud Messaging)
+CREATE TABLE IF NOT EXISTS device_tokens (
+    id_token SERIAL PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    plataforma VARCHAR(20) NOT NULL DEFAULT 'web' CHECK (plataforma IN ('web', 'mobile', 'desktop')),
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Histórico in-app de notificações geradas pelo barramento de eventos
+CREATE TABLE IF NOT EXISTS notifications (
+    id_notificacao SERIAL PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    tipo VARCHAR(40) NOT NULL,
+    titulo VARCHAR(120) NOT NULL,
+    corpo TEXT NOT NULL,
+    dados JSONB,
+    lida BOOLEAN NOT NULL DEFAULT FALSE,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_device_tokens_usuario ON device_tokens (id_usuario);
+CREATE INDEX IF NOT EXISTS idx_notifications_usuario ON notifications (id_usuario, criado_em DESC);
