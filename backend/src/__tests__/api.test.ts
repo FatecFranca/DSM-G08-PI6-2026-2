@@ -104,7 +104,8 @@ describe('mensageria: /api/notifications', () => {
   it('GET /status informa o barramento e o estado da chave FCM', async () => {
     const resposta = await request(app).get('/api/notifications/status');
     expect(resposta.status).toBe(200);
-    expect(resposta.body.mensageria.barramento).toContain('publish/subscribe');
+    expect(typeof resposta.body.mensageria.barramento).toBe('string');
+    expect(resposta.body.mensageria.barramento.length).toBeGreaterThan(0);
     expect(typeof resposta.body.mensageria.push.chaveConfigurada).toBe('boolean');
   });
 

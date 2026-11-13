@@ -1,8 +1,9 @@
-// Barramento de eventos em processo (publish/subscribe) para intercomunicação
-// entre os módulos da API (protocolo de mensageria da disciplina-chave).
-// A interface publish/subscribe foi desenhada para ser trocada por um broker
-// externo (RabbitMQ, AWS SNS/SQS ou Redis Pub/Sub) sem alterar produtores e
-// consumidores: basta reimplementar este módulo mantendo a mesma assinatura.
+// Barramento de eventos para intercomunicação entre os módulos da API
+// (protocolo de mensageria da disciplina-chave). Quando a Azure Service Bus
+// está configurada, as mensagens são publicadas na fila gerenciada da nuvem;
+// sem essa configuração, o barramento opera em processo (publish/subscribe
+// local) mantendo a mesma interface. Para trocar por outro broker
+// (RabbitMQ, SQS...), basta reimplementar o módulo preservando a assinatura.
 
 export type TipoEvento =
   | 'agendamento.criado'
@@ -15,6 +16,8 @@ export interface Evento<T = Record<string, unknown>> {
 }
 
 type Manipulador = (evento: Evento) => void | Promise<void>;
+
+import { publicarViaServiceBus, serviceBusConfigurado } from './service-bus';
 
 const assinantes = new Map<TipoEvento, Set<Manipulador>>();
 
@@ -31,6 +34,12 @@ export function inscrever(tipo: TipoEvento, manipulador: Manipulador): () => voi
  * propaga para o fluxo de negócio que publicou o evento.
  */
 export function publicar<T extends Record<string, unknown>>(tipo: TipoEvento, dados: T): void {
+  // Azure Service Bus configurado => publica na fila gerenciada da nuvem
+  if (serviceBusConfigurado()) {
+    void publicarViaServiceBus(tipo, dados)
+      .catch(erro => console.error(`[BARRAMENTO] Falha ao publicar ${tipo} na Service Bus:`, erro));
+    return;
+  }
   const evento: Evento<T> = { tipo, ocorreuEm: new Date().toISOString(), dados };
   const conjunto = assinantes.get(tipo);
   if (!conjunto || conjunto.size === 0) {

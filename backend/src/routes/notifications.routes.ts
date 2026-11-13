@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { pool } from '../database/db';
 import { asyncHandler, authMiddleware, AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { chaveConfigurada } from '../messaging/fcm.provider';
+import { nomeFila, serviceBusConfigurado } from '../messaging/service-bus';
 
 const router = Router();
 
@@ -9,7 +10,9 @@ const router = Router();
 router.get('/status', (_req, res: Response) => {
   return res.json({
     mensageria: {
-      barramento: 'event-bus em processo (publish/subscribe, trocável por RabbitMQ/SQS)',
+      barramento: serviceBusConfigurado()
+        ? `azure-service-bus (fila ${nomeFila()})`
+        : 'event-bus em processo (fallback; defina AZURE_SERVICE_BUS_CONNECTION_STRING para a Service Bus da Azure)',
       eventos: ['agendamento.criado', 'agendamento.atualizado'],
       push: {
         provedor: chaveConfigurada() ? 'fcm' : 'simulado',

@@ -4,7 +4,8 @@
 // registrados. Falhas de mensageria nunca propagam para o fluxo de negócio.
 
 import { pool } from '../database/db';
-import { Evento, inscrever, TipoEvento } from './event-bus';
+import { inscrever, TipoEvento } from './event-bus';
+import { iniciarConsumidorServiceBus, serviceBusConfigurado } from './service-bus';
 import { chaveConfigurada, enviarPush } from './fcm.provider';
 
 interface DadosAgendamento {
@@ -60,8 +61,8 @@ async function notificarUsuario(
   }
 }
 
-async function processarEvento(tipo: TipoEvento, evento: Evento) {
-    const dados = evento.dados as unknown as DadosAgendamento;
+async function processarMensagem(tipo: TipoEvento, dadosBrutos: Record<string, unknown>) {
+    const dados = dadosBrutos as unknown as DadosAgendamento;
     if (!Number.isInteger(dados?.id_agendamento)) return;
     const contexto = await carregarContexto(dados).catch(() => null);
     if (!contexto) return;
@@ -104,11 +105,17 @@ async function processarEvento(tipo: TipoEvento, evento: Evento) {
 
 /** Registra os consumidores do barramento. Deve ser chamado uma única vez na inicialização. */
 export function inicializarConsumidorNotificacoes(): void {
-  const eventos: TipoEvento[] = ['agendamento.criado', 'agendamento.atualizado'];
-  for (const tipo of eventos) {
-    inscrever(tipo, evento => { void processarEvento(tipo, evento); });
+  if (serviceBusConfigurado()) {
+    // Mensageria gerenciada: consome mensagens da fila do Azure Service Bus
+    iniciarConsumidorServiceBus(processarMensagem);
+  } else {
+    // Fallback em processo: assina o barramento local
+    const eventos: TipoEvento[] = ['agendamento.criado', 'agendamento.atualizado'];
+    for (const tipo of eventos) {
+      inscrever(tipo, evento => { void processarMensagem(tipo, evento.dados); });
+    }
   }
   console.log(
-    `[NOTIFICACOES] Consumidor de mensageria ativo (push ${chaveConfigurada() ? 'FCM configurado' : 'em modo simulado - defina FCM_SERVER_KEY'}).`
+    `[NOTIFICACOES] Consumidor ${serviceBusConfigurado() ? 'Azure Service Bus (fila gerenciada)' : 'em processo (fallback)'} ativo; push ${chaveConfigurada() ? 'FCM configurado' : 'em modo simulado - defina FCM_SERVER_KEY'}.`
   );
 }
