@@ -229,5 +229,24 @@ export const api = {
       body: JSON.stringify({ texto })
     }, true);
     return result.mensagem;
+  },
+
+  // ===== Jornada de Trabalho (expediente do prestador) =====
+
+  async getSchedule(providerId: number): Promise<{ schedules: Array<{
+    id_jornada: number; id_prestador: number; dia_semana: number;
+    hora_inicio: string; hora_fim: string; inicio_intervalo: string | null; fim_intervalo: string | null; ativo: boolean;
+  }> }> {
+    return request(`/schedule/${providerId}`);
+  },
+
+  async saveSchedule(data: {
+    dia_semana: number;
+    hora_inicio: string;
+    hora_fim: string;
+    inicio_intervalo?: string;
+    fim_intervalo?: string;
+  }): Promise<{ schedule: unknown }> {
+    return request('/schedule', { method: 'POST', body: JSON.stringify(data) }, true);
   }
 };

@@ -4,6 +4,7 @@ import { Appointment, Service, UserProfile } from '../types';
 import { Users, DollarSign, Star, Brain, Check, X, Eye, Plus, Scissors, Clock, Calendar, Edit3, Trash2, ShieldAlert } from 'lucide-react';
 import { ModalNovoServico } from '../components/ModalNovoServico';
 import { ModalEditarServico } from '../components/ModalEditarServico';
+import { ModalJornada } from '../components/ModalJornada';
 
 const today = new Date();
 const todayLocal = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -22,6 +23,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
   // Modais
   const [modalNovoAberto, setModalNovoAberto] = useState<boolean>(false);
   const [modalEditarAberto, setModalEditarAberto] = useState<boolean>(false);
+  const [modalJornadaAberto, setModalJornadaAberto] = useState<boolean>(false);
   const [servicoEmEdicao, setServicoEmEdicao] = useState<Service | null>(null);
 
   const [mensagemSucesso, setMensagemSucesso] = useState<string>('');
@@ -175,13 +177,22 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
         <div>
           <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Módulo Administrativo</span>
           <h1 className="text-3xl font-normal text-stone-900 tracking-tight mt-1">
-            {usuario.tipo_perfil === 'Admin' ? 'Painel de Administração Global' : usuario.tipo_perfil === 'Cliente' ? 'Meus Agendamentos' : 'Painel do Prestador (RF11)'}
+            {usuario.tipo_perfil === 'Admin' ? 'Painel de Administração Global' : usuario.tipo_perfil === 'Cliente' ? 'Meus Agendamentos' : 'Painel do Prestador'}
           </h1>
           <p className="text-xs text-stone-500 font-light mt-1">
             Conectado como: <strong>{usuario.nome}</strong> ({usuario.tipo_perfil}).
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          {(usuario.tipo_perfil === 'Admin' || usuario.tipo_perfil === 'Prestador') && (
+            <button
+              onClick={() => setModalJornadaAberto(true)}
+              className="bg-white hover:bg-pastel-cream text-stone-800 text-xs uppercase tracking-wider font-bold px-6 py-3 border border-stone-300 transition flex items-center space-x-2"
+            >
+              <Clock className="w-4 h-4 text-pastel-blue-dark" />
+              <span>Configurar Jornada</span>
+            </button>
+          )}
           {(usuario.tipo_perfil === 'Admin' || usuario.tipo_perfil === 'Prestador') && (
             <button
               onClick={() => setModalNovoAberto(true)}
@@ -251,12 +262,12 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
         </div>
       </div>
 
-      {/* Catálogo de Serviços do Prestador (RF03) com Ações de Edição e Exclusão */}
+      {/* Catálogo de Serviços do Prestador com Ações de Edição e Exclusão */}
       <div className="bg-white border border-stone-300 p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-stone-200 pb-4 gap-3">
           <div>
             <h2 className="text-base font-bold uppercase tracking-wider text-stone-900 flex items-center space-x-2">
-              <span>Catálogo de Serviços da Plataforma (RF03)</span>
+              <span>Catálogo de Serviços da Plataforma</span>
               <span className="text-xs font-mono font-normal text-stone-400">({servicos.length} ativos)</span>
             </h2>
             <p className="text-xs text-stone-500 font-mono">
@@ -415,8 +426,8 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
                 <th className="py-3.5 px-6">{usuario.tipo_perfil === 'Cliente' ? 'Prestador' : 'Cliente'}</th>
                 <th className="py-3.5 px-6">Serviço</th>
                 <th className="py-3.5 px-6">Valor</th>
-                <th className="py-3.5 px-6">Status (RNF06)</th>
-                <th className="py-3.5 px-6 text-right">Ações (RF08)</th>
+                <th className="py-3.5 px-6">Status</th>
+                <th className="py-3.5 px-6 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-200 text-xs">
@@ -518,6 +529,16 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
         service={servicoEmEdicao}
         onClose={() => setModalEditarAberto(false)}
         onServiceUpdated={handleServiceUpdated}
+      />
+
+      {/* Modal de Jornada de Trabalho */}
+      <ModalJornada
+        isOpen={modalJornadaAberto}
+        onClose={() => setModalJornadaAberto(false)}
+        onSaved={mensagem => {
+          setMensagemSucesso(mensagem);
+          setTimeout(() => setMensagemSucesso(''), 5000);
+        }}
       />
 
     </div>
