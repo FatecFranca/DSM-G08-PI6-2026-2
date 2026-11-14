@@ -32,7 +32,7 @@ Cliente agenda (web/mobile)  →  API publica evento  →  FILA agendou-eventos 
 | Consumidor de notificações | [`backend/src/messaging/notifications.service.ts`](../backend/src/messaging/notifications.service.ts) |
 | Endpoints de notificações | [`backend/src/routes/notifications.routes.ts`](../backend/src/routes/notifications.routes.ts) |
 
-Eventos publicados: `agendamento.criado` e `agendamento.atualizado` (produtor em [`backend/src/routes/appointments.routes.ts`](../backend/src/routes/appointments.routes.ts)). O tipo do evento viaja nas `applicationProperties` da mensagem e no corpo (`{tipo, ocorreuEm, dados}`), permitindo roteamento por novos consumidores sem alterar o produtor.
+Eventos publicados: `agendamento.criado`, `agendamento.atualizado` (produtor em [`backend/src/routes/appointments.routes.ts`](../backend/src/routes/appointments.routes.ts)) e `chat.mensagem_recebida` (produtor em [`backend/src/routes/chat.routes.ts`](../backend/src/routes/chat.routes.ts), chat Cliente ↔ Prestador). O tipo do evento viaja nas `applicationProperties` da mensagem e no corpo (`{tipo, ocorreuEm, dados}`), permitindo roteamento por novos consumidores sem alterar o produtor. O evento de chat carrega `{id_conversa, id_agendamento, id_autor, id_destinatario, nome_autor, texto}` e o consumidor de notificações persiste a mensagem in-app e dispara push FCM para o destinatário.
 
 Cobertura de testes: 7 casos do adaptador (produtor, roteamento e consumidor) na suíte Vitest — [`backend/src/__tests__/service-bus.test.ts`](../backend/src/__tests__/service-bus.test.ts), totalizando 37 testes passando.
 
