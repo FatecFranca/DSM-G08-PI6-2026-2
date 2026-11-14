@@ -34,7 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
               Agendou<span className="text-pastel-sage-dark font-light">.</span>
             </span>
             <span className="block text-[9px] uppercase tracking-widest text-stone-400 font-semibold">
-              PI 6º • Minimal
+              PI 6º
             </span>
           </div>
         </button>

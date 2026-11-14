@@ -45,7 +45,7 @@ export const ModalNovoServico: React.FC<ModalNovoServicoProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
       <div className="bg-white p-8 max-w-lg w-full text-left border-2 border-stone-900 space-y-6">
         
         <div className="flex items-center justify-between border-b border-stone-200 pb-4">
