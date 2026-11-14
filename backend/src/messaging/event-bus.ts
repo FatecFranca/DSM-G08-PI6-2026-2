@@ -7,7 +7,8 @@
 
 export type TipoEvento =
   | 'agendamento.criado'
-  | 'agendamento.atualizado';
+  | 'agendamento.atualizado'
+  | 'chat.mensagem_recebida';
 
 export interface Evento<T = Record<string, unknown>> {
   tipo: TipoEvento;

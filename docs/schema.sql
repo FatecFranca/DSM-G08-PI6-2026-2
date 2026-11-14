@@ -137,3 +137,32 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 CREATE INDEX IF NOT EXISTS idx_device_tokens_usuario ON device_tokens (id_usuario);
 CREATE INDEX IF NOT EXISTS idx_notifications_usuario ON notifications (id_usuario, criado_em DESC);
+
+-- ====================================================================
+-- CHAT CLIENTE <-> PRESTADOR (mensageria de conversas)
+-- Tabelas criadas com IF NOT EXISTS para não afetar bases existentes.
+-- ====================================================================
+
+-- Conversa 1:1 entre cliente e prestador, vinculada ao agendamento
+CREATE TABLE IF NOT EXISTS conversas (
+    id_conversa SERIAL PRIMARY KEY,
+    id_agendamento INT NOT NULL REFERENCES agendamentos(id_agendamento) ON DELETE CASCADE,
+    id_cliente INT NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    id_prestador INT NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    criada_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizada_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (id_agendamento)
+);
+
+-- Mensagens da conversa
+CREATE TABLE IF NOT EXISTS mensagens_chat (
+    id_mensagem SERIAL PRIMARY KEY,
+    id_conversa INT NOT NULL REFERENCES conversas(id_conversa) ON DELETE CASCADE,
+    id_autor INT NOT NULL REFERENCES usuarios(id_usuario),
+    texto TEXT NOT NULL CHECK (length(btrim(texto)) > 0 AND length(texto) <= 2000),
+    lida BOOLEAN NOT NULL DEFAULT FALSE,
+    criada_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_mensagens_conversa ON mensagens_chat (id_conversa, criada_em);
+CREATE INDEX IF NOT EXISTS idx_conversas_participante ON conversas (id_cliente, id_prestador);
