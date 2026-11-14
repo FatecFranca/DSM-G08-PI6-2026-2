@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Appointment, Service, UserProfile } from '../types';
+import { Appointment, Service, UserProfile, Review } from '../types';
 import { Users, DollarSign, Star, Brain, Check, X, Eye, Plus, Scissors, Clock, Calendar, Edit3, Trash2, ShieldAlert } from 'lucide-react';
 import { ModalNovoServico } from '../components/ModalNovoServico';
 import { ModalEditarServico } from '../components/ModalEditarServico';
@@ -28,7 +28,7 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
 
   const [mensagemSucesso, setMensagemSucesso] = useState<string>('');
   const [erro, setErro] = useState('');
-  const [metricas, setMetricas] = useState({ mediaNotas: 0, totalAvaliacoes: 0, taxaSatisfacaoPercentual: 0 });
+  const [metricas, setMetricas] = useState<{ mediaNotas: number; totalAvaliacoes: number; taxaSatisfacaoPercentual: number; reviews: Review[] }>({ mediaNotas: 0, totalAvaliacoes: 0, taxaSatisfacaoPercentual: 0, reviews: [] });
 
   const carregarDados = async () => {
     const user = api.getCurrentUser();
@@ -344,6 +344,51 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
             );
           })}
         </div>
+      </div>
+
+      {/* Avaliações Recebidas dos Clientes */}
+      <div className="bg-white border border-stone-300 space-y-4">
+        <div className="p-6 border-b border-stone-200">
+          <h2 className="text-base font-bold uppercase tracking-wider text-stone-900">Avaliações Recebidas dos Clientes</h2>
+          <p className="text-xs text-stone-500 font-mono mt-0.5">
+            Comentários registrados após cada atendimento concluído, com o sentimento classificado pela IA.
+          </p>
+        </div>
+
+        {metricas.reviews.length === 0 ? (
+          <p className="px-6 pb-6 text-xs font-mono text-stone-400">
+            Nenhuma avaliação recebida ainda. Elas aparecem aqui depois que os clientes avaliarem atendimentos concluídos.
+          </p>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4 p-6">
+            {metricas.reviews.map(review => (
+              <div key={review.id_avaliacao} className="p-5 border border-stone-300 bg-pastel-cream space-y-3">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${star <= review.nota ? 'fill-stone-900 text-stone-900' : 'text-stone-300'}`}
+                      />
+                    ))}
+                    <span className="font-mono text-xs font-bold text-stone-800 ml-1">{review.nota}/5</span>
+                  </div>
+                  <span className={`px-2 py-0.5 text-[9px] uppercase font-bold border font-mono ${
+                    review.sentimento_predito === 'Positivo'
+                      ? 'bg-pastel-sage text-pastel-sage-dark border-pastel-sage-dark/30'
+                      : 'bg-pastel-peach text-pastel-peach-dark border-pastel-peach-dark/30'
+                  }`}>
+                    {review.sentimento_predito || 'Sem classificação'}
+                  </span>
+                </div>
+                <p className="text-xs text-stone-700 italic leading-relaxed">“{review.comentario}”</p>
+                <p className="text-[10px] font-mono text-stone-400">
+                  Atendimento #{review.id_agendamento} · {api.extrairData(review.data_avaliacao)}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       </>
       )}

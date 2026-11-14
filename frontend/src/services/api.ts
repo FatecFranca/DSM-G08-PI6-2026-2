@@ -163,6 +163,7 @@ export const api = {
     mediaNotas: number;
     taxaSatisfacaoPercentual: number;
     sentimentos: { positivas: number; negativas: number };
+    reviews: Review[];
   }> {
     return request(`/reviews/provider/${providerId}`, {}, true);
   },
