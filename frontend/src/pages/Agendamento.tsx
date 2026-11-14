@@ -130,7 +130,7 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
         </div>
 
         <div className="bg-pastel-cream p-4 border border-stone-200 text-xs font-mono space-y-1">
-          <p className="font-bold text-stone-800 uppercase tracking-wider text-[11px]">Jornada de Trabalho (RF04)</p>
+          <p className="font-bold text-stone-800 uppercase tracking-wider text-[11px]">Jornada de Trabalho</p>
           <p className="text-stone-600">Consulte os horários disponíveis por data</p>
           <p className="text-stone-400 text-[11px]">O sistema considera a jornada cadastrada</p>
         </div>
@@ -139,7 +139,7 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
       {/* Grid de Agendamento */}
       <div className="grid lg:grid-cols-12 gap-8">
         
-        {/* Passo 1: Seleção de Serviço (RF03) */}
+        {/* Passo 1: Seleção de Serviço */}
         <div className="lg:col-span-6 space-y-4">
           <div className="flex items-center justify-between border-b border-stone-300 pb-2">
             <h2 className="text-base font-bold uppercase tracking-wider text-stone-900 flex items-center">
@@ -187,7 +187,7 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Passo 2: Data e Slots Livres vs Ocupados (RF05 & RF07) */}
+        {/* Passo 2: Data e Slots Livres vs Ocupados */}
         <div className="lg:col-span-6 space-y-4">
           <div className="flex items-center justify-between border-b border-stone-300 pb-2">
             <h2 className="text-base font-bold uppercase tracking-wider text-stone-900 flex items-center">
@@ -232,7 +232,7 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
                   </span>
                 </div>
                 <span className="text-stone-400 text-[10px]">
-                  {tempoCalculoMs}ms (RNF01 {tempoCalculoMs < 2000 ? 'OK' : 'VIOLADO'})
+                  {tempoCalculoMs}ms
                 </span>
               </div>
 
@@ -251,7 +251,7 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
                           type="button"
                           disabled
                           className="py-3 px-2 border border-stone-200 bg-stone-100/70 text-stone-400 cursor-not-allowed flex flex-col items-center justify-center opacity-70"
-                          title="Este horário já está reservado por outro cliente (RF07)"
+                          title="Este horário já está reservado por outro cliente"
                         >
                           <span className="line-through">{slot.inicio}</span>
                           <span className="text-[9px] uppercase tracking-wider text-red-500 font-bold">

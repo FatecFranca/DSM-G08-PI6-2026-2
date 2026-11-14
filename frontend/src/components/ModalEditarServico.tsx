@@ -62,7 +62,7 @@ export const ModalEditarServico: React.FC<ModalEditarServicoProps> = ({
         
         <div className="flex items-center justify-between border-b border-stone-200 pb-4">
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Gerenciamento (RF03)</span>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Gerenciamento</span>
             <h3 className="text-xl font-normal text-stone-900 uppercase tracking-tight mt-0.5">Editar Serviço</h3>
           </div>
           <button

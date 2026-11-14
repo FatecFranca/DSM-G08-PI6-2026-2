@@ -43,7 +43,7 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
       .catch(error => setErro(error instanceof Error ? error.message : 'Não foi possível carregar os atendimentos concluídos.'));
   }, []);
 
-  // Executar análise de sentimento em tempo real (RF10 & RNF02)
+  // Executar análise de sentimento em tempo real
   useEffect(() => {
     const timer = setTimeout(() => {
       if (comentario.trim()) {
@@ -85,14 +85,14 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
         {/* Cabeçalho */}
         <div className="border-b border-stone-200 pb-5">
           <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Feedback & NLP</span>
-          <h1 className="text-2xl font-normal text-stone-900 tracking-tight mt-1">Avaliação do Atendimento (RF09)</h1>
+          <h1 className="text-2xl font-normal text-stone-900 tracking-tight mt-1">Avaliação do Atendimento</h1>
           <p className="text-xs text-stone-500 font-light mt-1">Classificação de sentimento aplicada aos comentários após a conclusão do atendimento.</p>
         </div>
 
         {!enviado ? (
           <form onSubmit={handleSubmit} className="space-y-6">
 
-            {/* Seletor Dinâmico de Serviço (RF09) */}
+            {/* Seletor Dinâmico de Serviço */}
             <div className="space-y-1.5">
               <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 font-mono">
                 Serviço a Ser Avaliado:
@@ -170,7 +170,7 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
                 <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 font-mono">
                   Feedback em Texto:
                 </label>
-                <span className="text-[10px] font-mono text-stone-400">Classificação Automática (RF10)</span>
+                <span className="text-[10px] font-mono text-stone-400">Classificação Automática</span>
               </div>
               <textarea
                 rows={3}
@@ -182,7 +182,7 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
               />
             </div>
 
-            {/* Painel da IA de Sentimento em Cores Pastéis (RF10 & RNF02) */}
+            {/* Painel da IA de Sentimento em Cores Pastéis */}
             {analiseIA && (
               <div className="p-5 bg-pastel-lavender border border-pastel-lavender-dark/20 space-y-3">
                 <div className="flex items-center justify-between text-xs font-mono">

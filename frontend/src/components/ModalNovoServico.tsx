@@ -50,7 +50,7 @@ export const ModalNovoServico: React.FC<ModalNovoServicoProps> = ({ isOpen, onCl
         
         <div className="flex items-center justify-between border-b border-stone-200 pb-4">
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Catálogo (RF03)</span>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">Catálogo</span>
             <h3 className="text-xl font-normal text-stone-900 uppercase tracking-tight mt-0.5">Cadastrar Novo Serviço</h3>
           </div>
           <button
