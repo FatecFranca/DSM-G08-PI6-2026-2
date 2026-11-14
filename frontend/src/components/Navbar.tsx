@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarCheck, User, LayoutDashboard, Star, Calendar } from 'lucide-react';
+import { CalendarCheck, User, LayoutDashboard, Star, Calendar, MessageSquare } from 'lucide-react';
 import { api } from '../services/api';
 import { UserProfile } from '../types';
 
@@ -51,6 +51,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
           </button>
           <button onClick={() => onNavigate('avaliacao')} className={`px-4 py-2 border flex items-center space-x-2 transition ${currentPage === 'avaliacao' ? 'bg-pastel-amber text-pastel-amber-dark border-pastel-amber-dark/30 font-extrabold' : 'border-transparent hover:border-stone-200 hover:bg-stone-100/60'}`}>
             <Star className="w-3.5 h-3.5" /><span>Avaliações & IA</span>
+          </button>
+          <button onClick={() => onNavigate('chat')} className={`px-4 py-2 border flex items-center space-x-2 transition ${currentPage === 'chat' ? 'bg-pastel-lavender text-pastel-lavender-dark border-pastel-lavender-dark/30 font-extrabold' : 'border-transparent hover:border-stone-200 hover:bg-stone-100/60'}`}>
+            <MessageSquare className="w-3.5 h-3.5" /><span>Chat</span>
           </button>
         </nav>
 

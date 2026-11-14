@@ -483,6 +483,18 @@ export const DashboardPrestador: React.FC<DashboardProps> = ({ onNavigate }) => 
                           Avaliação (NLP)
                         </button>
                       )}
+                      {item.status !== 'Cancelado' && (
+                        <button
+                          onClick={() => {
+                            localStorage.setItem('agendou_chat_alvo', JSON.stringify({ id_agendamento: item.id_agendamento }));
+                            onNavigate('chat');
+                          }}
+                          className="text-stone-900 hover:underline font-bold"
+                          title="Conversar com a outra parte sobre este agendamento"
+                        >
+                          Chat
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

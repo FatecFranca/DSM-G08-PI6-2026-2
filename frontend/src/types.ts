@@ -60,3 +60,33 @@ export interface SentimentResponse {
   tempoProcessamentoMs: number;
   rnf02_status: string;
 }
+
+export interface Conversation {
+  id_conversa: number;
+  id_agendamento: number;
+  id_cliente: number;
+  id_prestador: number;
+  criada_em: string;
+  atualizada_em: string;
+  cliente_nome: string;
+  prestador_nome: string;
+  servico_titulo: string;
+  servico_preco: number;
+  data_hora_inicio: string;
+  data_hora_fim: string;
+  agendamento_status: string;
+  texto?: string;
+  id_autor?: number;
+  total_nao_lidas?: number;
+}
+
+export interface ChatMessage {
+  id_mensagem: number;
+  id_conversa: number;
+  id_autor: number;
+  texto: string;
+  lida: boolean;
+  criada_em: string;
+  autor_nome: string;
+  autor_perfil: UserRole;
+}

@@ -6,6 +6,7 @@ import { Agendamento } from './pages/Agendamento';
 import { DashboardPrestador } from './pages/DashboardPrestador';
 import { Avaliacao } from './pages/Avaliacao';
 import { Login } from './pages/Login';
+import { Chat } from './pages/Chat';
 
 export const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<string>('home');
@@ -20,6 +21,8 @@ export const App: React.FC = () => {
         return <DashboardPrestador onNavigate={setCurrentPage} />;
       case 'avaliacao':
         return <Avaliacao onNavigate={setCurrentPage} />;
+      case 'chat':
+        return <Chat onNavigate={setCurrentPage} />;
       case 'login':
         return <Login onNavigate={setCurrentPage} />;
       default:

@@ -1,4 +1,4 @@
-import { Service, Appointment, Slot, SentimentResponse, UserProfile, Review, UserRole } from '../types';
+import { Service, Appointment, Slot, SentimentResponse, UserProfile, Review, UserRole, Conversation, ChatMessage } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 const GUEST: UserProfile = {
@@ -200,5 +200,34 @@ export const api = {
       tempoProcessamentoMs: result.performance.tempoProcessamentoMs,
       rnf02_status: result.performance.rnf02_status
     };
+  },
+
+  // ===== Chat Cliente <-> Prestador =====
+
+  async getConversations(): Promise<Conversation[]> {
+    const result = await request<{ conversations: Conversation[] }>('/chat/conversations', {}, true);
+    return result.conversations;
+  },
+
+  async openConversationForAppointment(idAgendamento: number): Promise<number> {
+    const result = await request<{ id_conversa: number }>('/chat/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ id_agendamento: idAgendamento })
+    }, true);
+    return result.id_conversa;
+  },
+
+  async getMessages(idConversa: number): Promise<{ messages: ChatMessage[]; conversation: Conversation }> {
+    const result = await request<{ messages: ChatMessage[]; conversation: Conversation }>(
+      `/chat/conversations/${idConversa}/messages`, {}, true);
+    return { messages: result.messages, conversation: result.conversation };
+  },
+
+  async sendMessage(idConversa: number, texto: string): Promise<ChatMessage> {
+    const result = await request<{ mensagem: ChatMessage }>(`/chat/conversations/${idConversa}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ texto })
+    }, true);
+    return result.mensagem;
   }
 };
