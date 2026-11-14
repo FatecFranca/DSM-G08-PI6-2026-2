@@ -97,6 +97,12 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
               <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 font-mono">
                 Serviço a Ser Avaliado:
               </label>
+              {agendamentosConcluidos.length === 0 ? (
+                <div className="p-4 bg-pastel-amber border border-pastel-amber-dark/30 text-[11px] font-mono text-pastel-amber-dark leading-relaxed">
+                  Nenhum atendimento concluído pendente de avaliação.<br />
+                  Agendamentos aparecem aqui após o prestador marcá-los como <strong>Concluído</strong> no painel.
+                </div>
+              ) : (
               <select
                 value={agendamentoSelecionado || ''}
                 onChange={e => {
@@ -115,6 +121,7 @@ export const Avaliacao: React.FC<AvaliacaoProps> = ({ onNavigate }) => {
                   </option>
                 ))}
               </select>
+              )}
               <p className="text-[11px] font-mono text-stone-400">
                 Somente atendimentos concluídos e ainda não avaliados podem receber feedback.
               </p>

@@ -241,9 +241,9 @@ router.patch('/:id/status', authMiddleware, asyncHandler(async (req: Authenticat
   if (['Cancelado', 'Concluído'].includes(appointment.status)) {
     return res.status(409).json({ error: 'Agendamentos cancelados ou concluídos não podem mudar de status.' });
   }
-  if (status === 'Concluído' && new Date(appointment.data_hora_fim).getTime() > Date.now()) {
-    return res.status(409).json({ error: 'O atendimento só pode ser concluído após o horário final.' });
-  }
+  // A conclusão é decidida pelo prestador (quem executa o serviço), sem trava
+  // de horário: com a trava antiga, atendimentos com data futura nunca podiam
+  // ser concluídos e ficavam fora da lista de avaliação do cliente.
   const result = await pool.query(
     `UPDATE agendamentos SET status=$2, atualizado_em=NOW() WHERE id_agendamento=$1
      RETURNING id_agendamento, id_cliente, id_prestador, id_servico, data_hora_inicio, data_hora_fim, status, observacoes`,
