@@ -19,6 +19,7 @@ async function start() {
   console.log(`   - Avaliações:   POST http://localhost:${PORT}/api/reviews`);
   console.log(`   - IA (NLP):     POST http://localhost:${PORT}/api/ai/sentiment-analysis`);
   console.log(`   - Mensageria:   GET  http://localhost:${PORT}/api/notifications/status`);
+  console.log(`   - Chat:         /api/chat/conversations (cliente <-> prestador)`);
   console.log('================================================================');
   });
 

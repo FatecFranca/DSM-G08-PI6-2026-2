@@ -739,6 +739,201 @@
           }
         }
       }
+    },
+    "/api/chat/conversations": {
+      "post": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Abre (ou obtém) a conversa de um agendamento",
+        "operationId": "abrirConversaChat",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id_agendamento"
+                ],
+                "properties": {
+                  "id_agendamento": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Conversa disponível (idempotente)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id_conversa": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "id_agendamento inválido"
+          },
+          "401": {
+            "description": "Token ausente/inválido"
+          },
+          "403": {
+            "description": "Usuário não participa do agendamento"
+          },
+          "404": {
+            "description": "Agendamento não encontrado"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Lista as conversas do usuário autenticado",
+        "operationId": "listarConversasChat",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversas com última mensagem e não lidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "conversations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente/inválido"
+          }
+        }
+      }
+    },
+    "/api/chat/conversations/{id}/messages": {
+      "get": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Histórico de mensagens de uma conversa (marca como lidas as recebidas)",
+        "operationId": "listarMensagensChat",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mensagens e contexto da conversa"
+          },
+          "401": {
+            "description": "Token ausente/inválido"
+          },
+          "403": {
+            "description": "Usuário não participa da conversa"
+          },
+          "404": {
+            "description": "Conversa não encontrada"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Envia mensagem e publica evento chat.mensagem_recebida no barramento",
+        "operationId": "enviarMensagemChat",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "texto"
+                ],
+                "properties": {
+                  "texto": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mensagem enviada"
+          },
+          "400": {
+            "description": "Texto inválido"
+          },
+          "401": {
+            "description": "Token ausente/inválido"
+          },
+          "403": {
+            "description": "Usuário não participa da conversa"
+          },
+          "404": {
+            "description": "Conversa não encontrada"
+          }
+        }
+      }
     }
   },
   "tags": [

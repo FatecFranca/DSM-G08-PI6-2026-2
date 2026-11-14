@@ -17,6 +17,15 @@ interface DadosAgendamento {
   status_anterior?: string;
 }
 
+interface DadosChat {
+  id_conversa: number;
+  id_agendamento: number;
+  id_autor: number;
+  id_destinatario: number;
+  nome_autor: string;
+  texto: string;
+}
+
 interface ContextoAgendamento {
   clienteNome: string;
   prestadorNome: string;
@@ -67,7 +76,25 @@ async function notificarUsuario(
   }
 }
 
+// Evento de chat: notifica o destinatário da mensagem (in-app + push FCM)
+async function processarMensagemChat(dadosBrutos: Record<string, unknown>): Promise<void> {
+  const dados = dadosBrutos as unknown as DadosChat;
+  if (!Number.isInteger(dados?.id_destinatario) || !Number.isInteger(dados?.id_autor)) return;
+  const resumo = dados.texto?.length > 80 ? `${dados.texto.slice(0, 80)}...` : dados.texto;
+  await notificarUsuario(
+    dados.id_destinatario,
+    'chat.mensagem_recebida',
+    `Nova mensagem de ${dados.nome_autor}`,
+    resumo || 'Você recebeu uma nova mensagem no chat.',
+    { id_conversa: dados.id_conversa, id_agendamento: dados.id_agendamento, evento: 'chat.mensagem_recebida' }
+  );
+}
+
 async function processarMensagem(tipo: TipoEvento, dadosBrutos: Record<string, unknown>) {
+    if (tipo === 'chat.mensagem_recebida') {
+      await processarMensagemChat(dadosBrutos);
+      return;
+    }
     const dados = dadosBrutos as unknown as DadosAgendamento;
     if (!Number.isInteger(dados?.id_agendamento)) return;
     const contexto = await carregarContexto(dados).catch(() => null);
@@ -116,7 +143,7 @@ export function inicializarConsumidorNotificacoes(): void {
     iniciarConsumidorServiceBus(processarMensagem);
   } else {
     // Fallback em processo: assina o barramento local
-    const eventos: TipoEvento[] = ['agendamento.criado', 'agendamento.atualizado'];
+    const eventos: TipoEvento[] = ['agendamento.criado', 'agendamento.atualizado', 'chat.mensagem_recebida'];
     for (const tipo of eventos) {
       inscrever(tipo, evento => { void processarMensagem(tipo, evento.dados); });
     }

@@ -13,7 +13,7 @@ router.get('/status', (_req, res: Response) => {
       barramento: serviceBusConfigurado()
         ? `azure-service-bus (fila ${nomeFila()})`
         : 'event-bus em processo (fallback; defina AZURE_SERVICE_BUS_CONNECTION_STRING para a Service Bus da Azure)',
-      eventos: ['agendamento.criado', 'agendamento.atualizado'],
+      eventos: ['agendamento.criado', 'agendamento.atualizado', 'chat.mensagem_recebida'],
       push: {
         provedor: chaveConfigurada() ? 'fcm' : 'simulado',
         chaveConfigurada: chaveConfigurada()

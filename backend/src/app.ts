@@ -7,6 +7,7 @@ import appointmentsRoutes from './routes/appointments.routes';
 import reviewsRoutes from './routes/reviews.routes';
 import aiRoutes from './routes/ai.routes';
 import notificationsRoutes from './routes/notifications.routes';
+import chatRoutes from './routes/chat.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { pool } from './database/db';
 import { inicializarConsumidorNotificacoes } from './messaging/notifications.service';
@@ -52,6 +53,7 @@ app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Middleware de tratamento global de erros
 app.use(errorHandler);
