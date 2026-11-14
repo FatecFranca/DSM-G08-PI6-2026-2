@@ -85,7 +85,7 @@ A especificação REST é [`docs/openapi.json`](docs/openapi.json), também exib
 
 ## Mensageria e notificações push
 
-A API publica eventos `agendamento.criado` e `agendamento.atualizado` em um barramento publish/subscribe ([`backend/src/messaging/event-bus.ts`](backend/src/messaging/event-bus.ts)). O consumidor ([`backend/src/messaging/notifications.service.ts`](backend/src/messaging/notifications.service.ts)) grava notificações in-app e despacha push via Firebase Cloud Messaging para os dispositivos registrados. Endpoints:
+A API publica eventos `agendamento.criado` e `agendamento.atualizado` em um barramento publish/subscribe ([`backend/src/messaging/event-bus.ts`](backend/src/messaging/event-bus.ts)). Com `AZURE_SERVICE_BUS_CONNECTION_STRING` configurada, os eventos são publicados na fila **Azure Service Bus** (broker gerenciado da nuvem, com peek-lock e reentrega); sem ela, o barramento opera em processo. O consumidor ([`backend/src/messaging/notifications.service.ts`](backend/src/messaging/notifications.service.ts)) grava notificações in-app e despacha push via Firebase Cloud Messaging para os dispositivos registrados. Evidências e arquitetura: [`docs/07_mensageria_azure_service_bus.md`](docs/07_mensageria_azure_service_bus.md). Endpoints:
 
 - `GET /api/notifications/status` — estado do subsistema de mensageria (público);
 - `POST /api/notifications/device` — registra o token do dispositivo (JWT);
@@ -128,6 +128,7 @@ O agrupamento K-Means opcional usa o arquivo `yelp_academic_dataset_business.jso
 - [Banco de dados](docs/03_banco_de_dados_conceitual_e_logico.md) e [schema PostgreSQL](docs/schema.sql)
 - [Computação em Nuvem II](docs/04_computacao_em_nuvem_II.md)
 - [Mineração de Dados](docs/05_mineracao_de_dados.md) e [evidências da Sprint 3](docs/06_evidencias_mineracao.md)
+- [Mensageria: Azure Service Bus](docs/07_mensageria_azure_service_bus.md)
 - [Contrato OpenAPI](docs/openapi.json)
 
 ## Implantação em nuvem
