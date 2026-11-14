@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../services/api';
 import { Service, Slot } from '../types';
 import { Scissors, Clock, ShieldCheck, Check, CheckCircle2, Calendar } from 'lucide-react';
@@ -322,7 +323,7 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
       </div>
 
       {/* Modal de Sucesso Minimalista com Sharp Corners */}
-      {modalSucesso && ultimoAgendado && (
+      {modalSucesso && ultimoAgendado && createPortal(
         <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
           <div className="bg-white p-8 max-w-sm w-full text-left border-2 border-stone-900 space-y-5">
             <div className="flex items-center space-x-3 text-stone-900 border-b border-stone-200 pb-3">
@@ -359,7 +360,8 @@ export const Agendamento: React.FC<AgendamentoProps> = ({ onNavigate }) => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

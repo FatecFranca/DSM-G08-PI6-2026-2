@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../services/api';
 import { X, Clock, Save } from 'lucide-react';
 
@@ -114,7 +115,7 @@ export const ModalJornada: React.FC<ModalJornadaProps> = ({ isOpen, onClose, onS
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
       <div className="bg-white p-8 max-w-2xl w-full text-left border-2 border-stone-900 space-y-6 max-h-[90vh] overflow-y-auto">
 
@@ -221,6 +222,7 @@ export const ModalJornada: React.FC<ModalJornadaProps> = ({ isOpen, onClose, onS
         </form>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

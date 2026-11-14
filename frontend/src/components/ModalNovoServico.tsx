@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../services/api';
 import { Service } from '../types';
 import { X, Plus, Clock, DollarSign, Sparkles } from 'lucide-react';
@@ -44,7 +45,7 @@ export const ModalNovoServico: React.FC<ModalNovoServicoProps> = ({ isOpen, onCl
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
       <div className="bg-white p-8 max-w-lg w-full text-left border-2 border-stone-900 space-y-6">
         
@@ -151,6 +152,7 @@ export const ModalNovoServico: React.FC<ModalNovoServicoProps> = ({ isOpen, onCl
         </form>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
