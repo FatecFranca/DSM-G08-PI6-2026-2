@@ -2,7 +2,7 @@
 
 Sistema multiplataforma de agendamento de serviços, desenvolvido pelo Grupo 08 do Projeto Interdisciplinar do 6º semestre de DSM (2026/2).
 
-**Integrantes:** Hugo Castro e Pablo Miguel.
+**Integrantes:** Hugo Castro, Pablo Miguel e Arthur Ferreira.
 
 O projeto reúne uma aplicação web e um app móvel Expo, conectados a uma API REST e a um banco PostgreSQL. Clientes podem consultar serviços e solicitar horários; prestadores podem acompanhar seus agendamentos.
 
